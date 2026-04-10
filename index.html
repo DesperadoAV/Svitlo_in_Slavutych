@@ -3,7 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    
     <link rel="icon" type="image/png" href="https://i.postimg.cc/6qXnY1GR/1770893073813.png">
     <title>Світло Славутич</title>
 
@@ -11,92 +10,96 @@
         body, html { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden; background: #1a1a1a; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
         iframe { width: 100%; height: 100%; border: none; display: block; }
 
-        /* Контейнер для банера */
         .banner-wrapper {
-            position: absolute; 
-            top: 10px; 
-            left: 0; 
-            right: 0;
-            display: flex; 
-            justify-content: center; 
-            z-index: 10000;
+            position: absolute; top: 10px; left: 0; right: 0;
+            display: flex; justify-content: center; z-index: 10000;
             pointer-events: none;
         }
 
         #main-banner {
             pointer-events: auto;
-            background: rgba(30, 30, 30, 0.9); 
-            color: white;
-            padding: 8px 16px; 
-            border-radius: 25px;
-            font-size: 14px; 
-            font-weight: 600; 
-            cursor: pointer;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-            border: 1px solid #444;
-            transition: all 0.3s ease;
-            text-align: center;
+            background: rgba(30, 30, 30, 0.95); color: white;
+            padding: 10px 20px; border-radius: 25px;
+            font-size: 15px; font-weight: 600; cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.6);
+            border: 1px solid #444; text-align: center;
+            min-width: 180px; transition: all 0.3s ease;
         }
 
-        /* Внутрішнє меню (приховане за замовчуванням) */
-        #menu-content { 
-            display: none; 
-            margin-top: 10px; 
-            flex-direction: column; 
-            gap: 10px; 
-            min-width: 200px;
-        }
-
+        #menu-content { display: none; margin-top: 12px; flex-direction: column; gap: 10px; }
+        
         .btn-row { display: flex; gap: 8px; justify-content: center; }
-
-        .btn-link {
-            flex: 1;
-            padding: 10px;
-            border-radius: 12px;
-            text-decoration: none;
-            color: white;
-            font-size: 13px;
-            text-align: center;
-            font-weight: bold;
-            transition: opacity 0.2s;
+        .btn-choice { 
+            flex: 1; padding: 10px; border-radius: 12px; border: none; 
+            color: white; font-weight: bold; cursor: pointer; font-size: 13px;
         }
+        
+        .tg-bg { background: #0088cc; }
+        .vb-bg { background: #7360f2; }
+        .sub-bg { background: #444; font-size: 12px; text-decoration: none; display: block; padding: 8px; border-radius: 8px; color: white; }
 
-        .tg { background: #0088cc; }
-        .vb { background: #7360f2; }
+        #step-links { display: none; flex-direction: column; gap: 6px; }
 
-        /* Опускаємо кнопки мапи, щоб вони не заважали банеру */
-        .leaflet-top.leaflet-left { margin-top: 60px !important; }
+        /* Коригування відступу для кнопок мапи */
+        .leaflet-top.leaflet-left { margin-top: 65px !important; }
     </style>
 </head>
 <body>
 
     <div class="banner-wrapper">
-        <div id="main-banner" onclick="toggleMenu()">
-            <div id="banner-label">📢 Канали та Черги</div>
+        <div id="main-banner" onclick="toggleMenu(event)">
+            <div id="banner-label">📢 Наші канали</div>
             
             <div id="menu-content">
-                <div class="btn-row">
-                    <a href="https://t.me/svitlo_in_Slavutych_News" target="_blank" class="btn-link tg">Telegram</a>
-                    <a href="https://invite.viber.com/?g2=AQBWONG%2BDtc6YVZaVt3j7%2BE73z2aD5aruhm7JFLEDXOExJuSOJZd6Ca2OsxdFHLo" target="_blank" class="btn-link vb">Viber</a>
+                <div id="step-apps" class="btn-row">
+                    <button class="btn-choice tg-bg" onclick="showTgLinks(event)">Telegram</button>
+                    <button class="btn-choice vb-bg" onclick="openViber(event)">Viber</button>
+                </div>
+
+                <div id="step-links">
+                    <a href="https://t.me/svitlo_in_Slavutych_News" target="_blank" class="sub-bg">🔔 Новинний канал</a>
+                    <a href="https://t.me/svitlo_in_slavutych" target="_blank" class="sub-bg">📊 Канал черг</a>
+                    <button onclick="goBack(event)" style="background:none; border:none; color:#aaa; cursor:pointer; font-size:11px; margin-top:5px;">← Назад</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <iframe src="https://umap.openstreetmap.fr/uk-ua/map/map_1365338?scaleControl=false&miniMap=false&scrollWheelZoom=false&zoomControl=true&editMode=disabled&moreControl=false&searchControl=false&tilelayersControl=false&embedControl=false&datalayersControl=false"></iframe>
+    <iframe src="https://umap.openstreetmap.fr/uk-ua/map/map_1365338?scaleControl=false&miniMap=false&scrollWheelZoom=false&zoomControl=true&editMode=disabled&moreControl=false&searchControl=false&tilelayersControl=true&embedControl=true&datalayersControl=false"></iframe>
 
     <script>
-        function toggleMenu() {
+        function toggleMenu(e) {
             const content = document.getElementById('menu-content');
-            const isHidden = content.style.display === 'none' || content.style.display === '';
-            content.style.display = isHidden ? 'flex' : 'none';
+            if (e.target.id === 'banner-label' || e.target.id === 'main-banner') {
+                const isHidden = content.style.display === 'none' || content.style.display === '';
+                content.style.display = isHidden ? 'flex' : 'none';
+                if (!isHidden) goBack(e); // Скидаємо до першого кроку при закритті
+            }
         }
 
-        // Закриття меню при кліку на мапу (поза банером)
+        function showTgLinks(e) {
+            e.stopPropagation();
+            document.getElementById('step-apps').style.display = 'none';
+            document.getElementById('step-links').style.display = 'flex';
+        }
+
+        function goBack(e) {
+            if(e) e.stopPropagation();
+            document.getElementById('step-apps').style.display = 'flex';
+            document.getElementById('step-links').style.display = 'none';
+        }
+
+        function openViber(e) {
+            e.stopPropagation();
+            window.open('https://invite.viber.com/?g2=AQBWONG%2BDtc6YVZaVt3j7%2BE73z2aD5aruhm7JFLEDXOExJuSOJZd6Ca2OsxdFHLo', '_blank');
+        }
+
+        // Закриття при кліку поза банером
         window.onclick = function(event) {
             const banner = document.getElementById('main-banner');
             if (!banner.contains(event.target)) {
                 document.getElementById('menu-content').style.display = 'none';
+                goBack();
             }
         }
     </script>

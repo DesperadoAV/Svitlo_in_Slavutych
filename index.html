@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Світло Славутич</title>
+    <style>
+        body, html { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden; background: #1a1a1a; }
+        iframe { width: 100%; height: 100%; border: none; display: block; }
+        #timer-box {
+            position: absolute; top: 10px; right: 10px;
+            background: rgba(0, 0, 0, 0.8); color: #00ff00;
+            padding: 5px 12px; border-radius: 15px;
+            font-family: sans-serif; font-size: 12px; z-index: 9999;
+            border: 1px solid #333; pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="timer-box">Оновлення: <span id="timer">180</span>с</div>
+    
+    <iframe id="map" src="https://umap.openstreetmap.fr/uk-ua/map/map_1365338?scaleControl=false&miniMap=false&scrollWheelZoom=false&zoomControl=true&editMode=disabled&moreControl=true&searchControl=null&tilelayersControl=null&embedControl=null&datalayersControl=true&onLoadPanel=none&captionBar=false&captionMenus=true"></iframe>
+
+    <script>
+        let seconds = 180;
+        setInterval(() => {
+            seconds--;
+            document.getElementById('timer').textContent = seconds;
+            if (seconds <= 0) {
+                document.getElementById('map').src = document.getElementById('map').src;
+                seconds = 180;
+            }
+        }, 1000);
+    </script>
+</body>
+</html>

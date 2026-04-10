@@ -19,28 +19,39 @@
         #main-banner {
             pointer-events: auto;
             background: rgba(30, 30, 30, 0.95); color: white;
-            padding: 10px 20px; border-radius: 25px;
-            font-size: 15px; font-weight: 600; cursor: pointer;
+            padding: 10px 16px; border-radius: 20px;
+            font-size: 14px; font-weight: 600; cursor: pointer;
             box-shadow: 0 4px 15px rgba(0,0,0,0.6);
-            border: 1px solid #444; text-align: center;
-            min-width: 180px; transition: all 0.3s ease;
+            border: 1px solid #444; width: auto; max-width: 90%;
         }
 
-        #menu-content { display: none; margin-top: 12px; flex-direction: column; gap: 10px; }
-        
+        #banner-label { text-align: center; }
+
+        #menu-content { display: none; flex-direction: column; gap: 10px; margin-top: 10px; }
+
         .btn-row { display: flex; gap: 8px; justify-content: center; }
         .btn-choice { 
             flex: 1; padding: 10px; border-radius: 12px; border: none; 
             color: white; font-weight: bold; cursor: pointer; font-size: 13px;
         }
-        
         .tg-bg { background: #0088cc; }
         .vb-bg { background: #7360f2; }
-        .sub-bg { background: #444; font-size: 12px; text-decoration: none; display: block; padding: 8px; border-radius: 8px; color: white; }
 
-        #step-links { display: none; flex-direction: column; gap: 6px; }
+        .grid-links { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; }
+        .q-link { 
+            display: flex; align-items: center; background: #252525; 
+            padding: 8px 10px; border-radius: 8px; color: white; 
+            text-decoration: none; font-size: 12px; border: 1px solid #333;
+        }
+        .dot { height: 10px; width: 10px; border-radius: 50%; display: inline-block; margin-right: 8px; }
+        
+        .news-link {
+            grid-column: span 2; background: #3a3a3a; justify-content: center; font-weight: bold;
+        }
 
-        /* Коригування відступу для кнопок мапи */
+        .header-step { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; border-bottom: 1px solid #444; padding-bottom: 5px; }
+
+        /* Корекція кнопок мапи під банер */
         .leaflet-top.leaflet-left { margin-top: 65px !important; }
     </style>
 </head>
@@ -51,15 +62,17 @@
             <div id="banner-label">📢 Наші канали</div>
             
             <div id="menu-content">
-                <div id="step-apps" class="btn-row">
-                    <button class="btn-choice tg-bg" onclick="showTgLinks(event)">Telegram</button>
-                    <button class="btn-choice vb-bg" onclick="openViber(event)">Viber</button>
+                <div id="step-1" class="btn-row">
+                    <button class="btn-choice tg-bg" onclick="selectSrv('tg', event)">Telegram</button>
+                    <button class="btn-choice vb-bg" onclick="selectSrv('vb', event)">Viber</button>
                 </div>
 
-                <div id="step-links">
-                    <a href="https://t.me/svitlo_in_Slavutych_News" target="_blank" class="sub-bg">🔔 Новинний канал</a>
-                    <a href="https://t.me/svitlo_in_slavutych" target="_blank" class="sub-bg">📊 Канал черг</a>
-                    <button onclick="goBack(event)" style="background:none; border:none; color:#aaa; cursor:pointer; font-size:11px; margin-top:5px;">← Назад</button>
+                <div id="step-2" style="display: none;">
+                    <div class="header-step">
+                        <span id="srv-title" style="font-size: 11px; color: #aaa;"></span>
+                        <button onclick="goBack(event)" style="background:none; border:none; color:#0088cc; cursor:pointer; font-size:11px;">← Назад</button>
+                    </div>
+                    <div id="links-grid" class="grid-links"></div>
                 </div>
             </div>
         </div>
@@ -68,36 +81,58 @@
     <iframe src="https://umap.openstreetmap.fr/uk-ua/map/map_1365338?scaleControl=false&miniMap=false&scrollWheelZoom=false&zoomControl=true&editMode=disabled&moreControl=false&searchControl=false&tilelayersControl=true&embedControl=true&datalayersControl=false"></iframe>
 
     <script>
+        const linksData = {
+            tg: { title: 'Обрано: Telegram', items: [
+                {n: '1.1', c: 'red', l: 'https://t.me/svitlo_in_Slavutych_1_1'},
+                {n: '2.1', c: 'blue', l: 'https://t.me/svitlo_in_Slavutych_2_1'},
+                {n: '3.1', c: 'purple', l: 'https://t.me/svitlo_in_Slavutych_3_1'},
+                {n: '3.2', c: 'yellow', l: 'https://t.me/svitlo_in_Slavutych_3_2'},
+                {n: '4.1', c: 'orange', l: 'https://t.me/svitlo_in_Slavutych_4_1'},
+                {n: '6.1', c: 'green', l: 'https://t.me/svitlo_in_Slavutych_6_1'},
+                {n: 'Новини', c: 'white', l: 'https://t.me/svitlo_in_Slavutych_News'}
+            ]},
+            vb: { title: 'Обрано: Viber', items: [
+                {n: '1.1', c: 'red', l: 'https://invite.viber.com/?g2=AQAwYtpyJWoodlZaVSylf8qXJh%2BIkorI%2BUEIlSNEjLY97kwXcxRXWcee8Wt%2FJM%2FS'},
+                {n: '2.1', c: 'blue', l: 'https://invite.viber.com/?g2=AQBXEog0eJuMg1ZaVvzFZ14R%2Bq%2B3qDs5gmfU3pLXpwkPygNpg43EBTllJkScCQI6'},
+                {n: '3.1', c: 'purple', l: 'https://invite.viber.com/?g2=AQA8UIh2a1ur71ZaVlCe5j56cKWAwAem1kuhxYeCg9xsUb8AFCKgRE5duiSA3fvW'},
+                {n: '3.2', c: 'yellow', l: 'https://invite.viber.com/?g2=AQA9Od9EXDrYslZaNY2rHJ1v1t8S5lA9RGxcLlvDP4ujK3n%2BHMvVHzeWmldseJdN'},
+                {n: '4.1', c: 'orange', l: 'https://invite.viber.com/?g2=AQAr4i0FDuS0TlZaWDF6W2Hk%2BTDJrVrCLKTBQSvAwDb7JPuDYn0HE0WtouQyqIm7'},
+                {n: '6.1', c: 'green', l: 'https://invite.viber.com/?g2=AQBP%2BePVKBjDBFZaVeCnWMT9gn%2Fl2vl2636E%2B9vRvecZjNegiPbNxN93KG90spyY'},
+                {n: 'Новини', c: 'white', l: 'https://invite.viber.com/?g2=AQBWONG%2BDtc6YVZaVt3j7%2BE73z2aD5aruhm7JFLEDXOExJuSOJZd6Ca2OsxdFHLo'}
+            ]}
+        };
+
         function toggleMenu(e) {
             const content = document.getElementById('menu-content');
             if (e.target.id === 'banner-label' || e.target.id === 'main-banner') {
-                const isHidden = content.style.display === 'none' || content.style.display === '';
-                content.style.display = isHidden ? 'flex' : 'none';
-                if (!isHidden) goBack(e); // Скидаємо до першого кроку при закритті
+                content.style.display = (content.style.display === 'flex') ? 'none' : 'flex';
+                if (content.style.display === 'none') goBack();
             }
         }
 
-        function showTgLinks(e) {
+        function selectSrv(srv, e) {
             e.stopPropagation();
-            document.getElementById('step-apps').style.display = 'none';
-            document.getElementById('step-links').style.display = 'flex';
+            document.getElementById('step-1').style.display = 'none';
+            document.getElementById('step-2').style.display = 'block';
+            document.getElementById('srv-title').innerText = linksData[srv].title;
+            
+            const grid = document.getElementById('links-grid');
+            grid.innerHTML = linksData[srv].items.map(i => `
+                <a href="${i.l}" target="_blank" class="q-link ${i.n === 'Новини' ? 'news-link' : ''}">
+                    ${i.n !== 'Новини' ? `<span class="dot" style="background:${i.c}"></span>` : '🔔 '}
+                    ${i.n}
+                </a>
+            `).join('');
         }
 
         function goBack(e) {
             if(e) e.stopPropagation();
-            document.getElementById('step-apps').style.display = 'flex';
-            document.getElementById('step-links').style.display = 'none';
+            document.getElementById('step-1').style.display = 'flex';
+            document.getElementById('step-2').style.display = 'none';
         }
 
-        function openViber(e) {
-            e.stopPropagation();
-            window.open('https://invite.viber.com/?g2=AQBWONG%2BDtc6YVZaVt3j7%2BE73z2aD5aruhm7JFLEDXOExJuSOJZd6Ca2OsxdFHLo', '_blank');
-        }
-
-        // Закриття при кліку поза банером
         window.onclick = function(event) {
-            const banner = document.getElementById('main-banner');
-            if (!banner.contains(event.target)) {
+            if (!document.getElementById('main-banner').contains(event.target)) {
                 document.getElementById('menu-content').style.display = 'none';
                 goBack();
             }

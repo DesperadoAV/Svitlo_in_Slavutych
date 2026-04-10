@@ -5,97 +5,109 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Світло Славутич</title>
     <style>
-        body, html { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden; background: #1a1a1a; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        body, html { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden; background: #1a1a1a; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
         iframe { width: 100%; height: 100%; border: none; display: block; }
-        
         #timer-box { display: none; }
 
-        /* Контейнер для плашки (центрування) */
         .banner-wrapper {
             position: absolute; top: 10px; left: 0; right: 0;
             display: flex; justify-content: center; z-index: 10000;
-            pointer-events: none; /* Щоб не заважало клікати по мапі поза плашкою */
+            pointer-events: none;
         }
 
-        /* Сама маленька плашка */
         #main-banner {
             pointer-events: auto;
-            background: rgba(40, 40, 40, 0.95); color: white;
-            padding: 8px 15px; border-radius: 20px;
-            font-size: 13px; font-weight: 600; cursor: pointer;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            background: rgba(35, 35, 35, 0.96); color: white;
+            padding: 10px 16px; border-radius: 20px;
+            font-size: 14px; font-weight: 600; cursor: pointer;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.6);
             border: 1px solid #444; transition: all 0.3s ease;
             max-width: 90%; width: auto;
         }
 
-        /* Внутрішнє меню (приховане спочатку) */
-        #menu-content { display: none; flex-direction: column; gap: 8px; margin-top: 10px; }
+        #menu-content { display: none; flex-direction: column; gap: 10px; margin-top: 10px; }
 
-        .header-row { display: flex; align-items: center; justify-content: space-between; gap: 15px; border-bottom: 1px solid #555; padding-bottom: 5px; margin-bottom: 5px; }
+        .header-row { display: flex; align-items: center; justify-content: space-between; gap: 15px; border-bottom: 1px solid #444; padding-bottom: 8px; }
         
-        .btn-choice { 
-            padding: 6px 12px; border-radius: 12px; border: none; 
-            color: white; font-weight: bold; cursor: pointer; font-size: 12px;
-        }
+        .btn-choice { flex: 1; padding: 8px; border-radius: 12px; border: none; color: white; font-weight: bold; cursor: pointer; font-size: 13px; }
         .tg-bg { background: #0088cc; }
         .vb-bg { background: #7360f2; }
-        .back-btn { background: #555; padding: 4px 8px; font-size: 10px; border-radius: 8px; border: none; color: #ccc; cursor: pointer; }
+        .back-btn { background: #444; padding: 4px 10px; font-size: 11px; border-radius: 8px; border: none; color: #eee; cursor: pointer; }
 
-        .links-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
-        .q-link { 
-            display: flex; align-items: center; background: #333; 
-            padding: 6px 10px; border-radius: 8px; color: white; 
-            text-decoration: none; font-size: 11px; border: 1px solid #444;
+        /* Стиль для кнопки Новин */
+        .news-link {
+            display: block; text-align: center; background: #444; 
+            padding: 10px; border-radius: 10px; color: white; 
+            text-decoration: none; font-size: 13px; font-weight: bold;
+            border: 1px solid #555; margin-bottom: 5px;
         }
-        .dot { height: 8px; width: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+
+        .links-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .q-link { 
+            display: flex; align-items: center; background: #2a2a2a; 
+            padding: 8px 12px; border-radius: 8px; color: white; 
+            text-decoration: none; font-size: 12px; border: 1px solid #3d3d3d;
+        }
+        .dot { height: 10px; width: 10px; border-radius: 50%; display: inline-block; margin-right: 8px; }
+        .section-label { font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 5px; }
     </style>
 </head>
 <body>
 
     <div class="banner-wrapper">
         <div id="main-banner" onclick="openMenu(event)">
-            <div id="banner-text">📢 Наші канали (TG/Viber)</div>
+            <div id="banner-text">📢 Канали та Черги (TG/Viber)</div>
             
             <div id="menu-content">
-                <div id="step-1" style="display: flex; gap: 10px; justify-content: center; padding: 5px 0;">
+                <div id="step-1" style="display: flex; gap: 12px; justify-content: center; padding: 5px 0;">
                     <button class="btn-choice tg-bg" onclick="selectService('tg', event)">Telegram</button>
                     <button class="btn-choice vb-bg" onclick="selectService('vb', event)">Viber</button>
                 </div>
 
                 <div id="step-2" style="display: none;">
                     <div class="header-row">
-                        <span id="selected-title" style="font-size: 11px; color: #aaa;"></span>
+                        <span id="selected-title" style="font-size: 12px; font-weight: bold;"></span>
                         <button class="back-btn" onclick="goBack(event)">⬅ Назад</button>
                     </div>
+                    
+                    <div class="section-label">Інформація</div>
+                    <div id="news-container"></div>
+                    
+                    <div class="section-label">Ваша черга</div>
                     <div id="links-list" class="links-grid"></div>
                 </div>
             </div>
         </div>
     </div>
 
-    <div id="timer-box"><span id="timer">180</span></div>
     <iframe id="map" src="https://umap.openstreetmap.fr/uk-ua/map/map_1365338?scaleControl=false&miniMap=false&scrollWheelZoom=false&zoomControl=true&editMode=disabled&moreControl=true&searchControl=null&tilelayersControl=null&embedControl=null&datalayersControl=true&onLoadPanel=none&captionBar=false&captionMenus=true"></iframe>
 
     <script>
         const linksData = {
-            tg: { title: 'Обрано: Telegram', items: [
-                {n: '1.1', c: 'red', l: 'https://t.me/svitlo_in_Slavutych_1_1'},
-                {n: '2.1', c: 'blue', l: 'https://t.me/svitlo_in_Slavutych_2_1'},
-                {n: '3.1', c: 'purple', l: 'https://t.me/svitlo_in_Slavutych_3_1'},
-                {n: '3.2', c: 'yellow', l: 'https://t.me/svitlo_in_Slavutych_3_2'},
-                {n: '4.1', c: 'orange', l: 'https://t.me/svitlo_in_Slavutych_4_1'},
-                {n: '6.1', c: 'green', l: 'https://t.me/svitlo_in_Slavutych_6_1'},
-                {n: 'Новини', c: 'white', l: 'https://t.me/svitlo_in_Slavutych_News'}
-            ]},
-            vb: { title: 'Обрано: Viber', items: [
-                {n: '1.1', c: 'red', l: 'https://invite.viber.com/?g2=AQAwYtpyJWoodlZaVSylf8qXJh%2BIkorI%2BUEIlSNEjLY97kwXcxRXWcee8Wt%2FJM%2FS'},
-                {n: '2.1', c: 'blue', l: 'https://invite.viber.com/?g2=AQBXEog0eJuMg1ZaVvzFZ14R%2Bq%2B3qDs5gmfU3pLXpwkPygNpg43EBTllJkScCQI6'},
-                {n: '3.1', c: 'purple', l: 'https://invite.viber.com/?g2=AQA8UIh2a1ur71ZaVlCe5j56cKWAwAem1kuhxYeCg9xsUb8AFCKgRE5duiSA3fvW'},
-                {n: '3.2', c: 'yellow', l: 'https://invite.viber.com/?g2=AQA9Od9EXDrYslZaNY2rHJ1v1t8S5lA9RGxcLlvDP4ujK3n%2BHMvVHzeWmldseJdN'},
-                {n: '4.1', c: 'orange', l: 'https://invite.viber.com/?g2=AQAr4i0FDuS0TlZaWDF6W2Hk%2BTDJrVrCLKTBQSvAwDb7JPuDYn0HE0WtouQyqIm7'},
-                {n: '6.1', c: 'green', l: 'https://invite.viber.com/?g2=AQBP%2BePVKBjDBFZaVeCnWMT9gn%2Fl2vl2636E%2B9vRvecZjNegiPbNxN93KG90spyY'},
-                {n: 'Новини', c: 'white', l: 'https://invite.viber.com/?g2=AQBWONG%2BDtc6YVZaVt3j7%2BE73z2aD5aruhm7JFLEDXOExJuSOJZd6Ca2OsxdFHLo'}
-            ]}
+            tg: { 
+                title: 'Telegram', 
+                news: {n: 'Канал Новини Славутича', l: 'https://t.me/svitlo_in_Slavutych_News'},
+                queues: [
+                    {n: '1.1', c: 'red', l: 'https://t.me/svitlo_in_Slavutych_1_1'},
+                    {n: '2.1', c: 'blue', l: 'https://t.me/svitlo_in_Slavutych_2_1'},
+                    {n: '3.1', c: 'purple', l: 'https://t.me/svitlo_in_Slavutych_3_1'},
+                    {n: '3.2', c: 'yellow', l: 'https://t.me/svitlo_in_Slavutych_3_2'},
+                    {n: '4.1', c: 'orange', l: 'https://t.me/svitlo_in_Slavutych_4_1'},
+                    {n: '6.1', c: 'green', l: 'https://t.me/svitlo_in_Slavutych_6_1'}
+                ]
+            },
+            vb: { 
+                title: 'Viber', 
+                news: {n: 'Спільнота Новини Славутича', l: 'https://invite.viber.com/?g2=AQBWONG%2BDtc6YVZaVt3j7%2BE73z2aD5aruhm7JFLEDXOExJuSOJZd6Ca2OsxdFHLo'},
+                queues: [
+                    {n: '1.1', c: 'red', l: 'https://invite.viber.com/?g2=AQAwYtpyJWoodlZaVSylf8qXJh%2BIkorI%2BUEIlSNEjLY97kwXcxRXWcee8Wt%2FJM%2FS'},
+                    {n: '2.1', c: 'blue', l: 'https://invite.viber.com/?g2=AQBXEog0eJuMg1ZaVvzFZ14R%2Bq%2B3qDs5gmfU3pLXpwkPygNpg43EBTllJkScCQI6'},
+                    {n: '3.1', c: 'purple', l: 'https://invite.viber.com/?g2=AQA8UIh2a1ur71ZaVlCe5j56cKWAwAem1kuhxYeCg9xsUb8AFCKgRE5duiSA3fvW'},
+                    {n: '3.2', c: 'yellow', l: 'https://invite.viber.com/?g2=AQA9Od9EXDrYslZaNY2rHJ1v1t8S5lA9RGxcLlvDP4ujK3n%2BHMvVHzeWmldseJdN'},
+                    {n: '4.1', c: 'orange', l: 'https://invite.viber.com/?g2=AQAr4i0FDuS0TlZaWDF6W2Hk%2BTDJrVrCLKTBQSvAwDb7JPuDYn0HE0WtouQyqIm7'},
+                    {n: '6.1', c: 'green', l: 'https://invite.viber.com/?g2=AQBP%2BePVKBjDBFZaVeCnWMT9gn%2Fl2vl2636E%2B9vRvecZjNegiPbNxN93KG90spyY'}
+                ]
+            }
         };
 
         function openMenu(e) {
@@ -110,10 +122,13 @@
             e.stopPropagation();
             document.getElementById('step-1').style.display = 'none';
             document.getElementById('step-2').style.display = 'block';
-            document.getElementById('selected-title').innerText = linksData[srv].title;
+            document.getElementById('selected-title').innerText = 'Обрано: ' + linksData[srv].title;
+            
+            const newsContainer = document.getElementById('news-container');
+            newsContainer.innerHTML = `<a href="${linksData[srv].news.l}" target="_blank" class="news-link">🔔 ${linksData[srv].news.n}</a>`;
             
             const list = document.getElementById('links-list');
-            list.innerHTML = linksData[srv].items.map(i => `
+            list.innerHTML = linksData[srv].queues.map(i => `
                 <a href="${i.l}" target="_blank" class="q-link">
                     <span class="dot" style="background-color: ${i.c}"></span>Черга ${i.n}
                 </a>
@@ -126,7 +141,6 @@
             document.getElementById('step-2').style.display = 'none';
         }
 
-        // Закриття меню при кліку на мапу
         window.onclick = function(event) {
             if (!document.getElementById('main-banner').contains(event.target)) {
                 document.getElementById('menu-content').style.display = 'none';
@@ -136,7 +150,6 @@
             }
         }
 
-        // Таймер оновлення мапи
         let sec = 180;
         setInterval(() => {
             sec--;

@@ -10,77 +10,66 @@
         body, html { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden; background: #1a1a1a; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
         iframe { width: 100%; height: 100%; border: none; display: block; }
 
+        /* Головний банер зверху */
         .banner-wrapper {
             position: absolute; top: 10px; left: 0; right: 0;
             display: flex; justify-content: center; z-index: 10000;
             pointer-events: none;
         }
-
         #main-banner {
-            pointer-events: auto;
-            background: rgba(30, 30, 30, 0.95); color: white;
-            padding: 10px 16px; border-radius: 20px;
-            font-size: 14px; font-weight: 600; cursor: pointer;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.6);
-            border: 1px solid #444; width: auto; max-width: 90%;
+            pointer-events: auto; background: rgba(30, 30, 30, 0.95); color: white;
+            padding: 10px 16px; border-radius: 20px; font-size: 14px; font-weight: 600; 
+            cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.6); border: 1px solid #444; width: auto; max-width: 90%;
         }
-
-        #banner-label { text-align: center; }
         #menu-content { display: none; flex-direction: column; gap: 10px; margin-top: 10px; }
-
         .btn-row { display: flex; gap: 8px; justify-content: center; }
         .btn-choice { flex: 1; padding: 10px; border-radius: 12px; border: none; color: white; font-weight: bold; cursor: pointer; font-size: 13px; }
         .tg-bg { background: #0088cc; }
         .vb-bg { background: #7360f2; }
-
         .grid-links { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; }
         .q-link { display: flex; align-items: center; background: #252525; padding: 8px 10px; border-radius: 8px; color: white; text-decoration: none; font-size: 12px; border: 1px solid #333; }
         .dot { height: 10px; width: 10px; border-radius: 50%; display: inline-block; margin-right: 8px; }
         .news-link { grid-column: span 2; background: #3a3a3a; justify-content: center; font-weight: bold; }
-
         .header-step { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; border-bottom: 1px solid #444; padding-bottom: 5px; }
 
-        /* Опускаємо кнопки мапи під банер */
+        /* Модальне вікно графіка */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); z-index: 20000; justify-content: center; align-items: center; cursor: pointer; }
+        .modal-content { max-width: 95%; max-height: 90%; border-radius: 12px; box-shadow: 0 0 30px rgba(0,0,0,0.5); border: 2px solid #444; }
+        .close-modal { position: absolute; top: 20px; right: 20px; color: white; font-size: 30px; font-weight: bold; cursor: pointer; }
+
+        /* Легенда черг (нижній правий кут) */
+        .queue-legend { position: absolute; bottom: 20px; right: 10px; background: rgba(30, 30, 30, 0.9); padding: 8px 12px; border-radius: 12px; z-index: 1000; color: white; font-size: 12px; display: flex; flex-direction: column; gap: 4px; border: 1px solid #444; }
+        .legend-item { display: flex; align-items: center; gap: 8px; font-weight: bold; }
+
+        /* Банер тривоги (центр знизу) */
+        .air-alert-banner { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 1001; background: rgba(30, 30, 30, 0.9); padding: 6px 15px; border-radius: 20px; color: white; display: flex; align-items: center; gap: 10px; font-size: 13px; border: 1px solid #444; }
+        .alert-dot { width: 10px; height: 10px; border-radius: 50%; }
+        .status-clear { background-color: #2ecc71; }
+        .status-active { background-color: #e74c3c; box-shadow: 0 0 10px #e74c3c; }
+
+        /* Корекція кнопок мапи */
         .leaflet-top.leaflet-left { margin-top: 65px !important; }
-        /* Банер черг*/
-        .queue-legend {
-    position: absolute;
-    bottom: 20px;
-    right: 10px;
-    background: rgba(255, 255, 255, 0.9);
-    padding: 8px 12px;
-    border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-    z-index: 1000;
-    font-family: Arial, sans-serif;
-    font-size: 12px;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
-.legend-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-weight: bold;
-}
-.dot {
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    display: inline-block;
-}
     </style>
 </head>
 <body>
 
+    <div id="imageModal" class="modal-overlay" onclick="closeChart()">
+        <span class="close-modal">&times;</span>
+        <img id="modalImg" class="modal-content" src="" alt="Графік">
+    </div>
+
     <div class="banner-wrapper">
         <div id="main-banner" onclick="toggleMenu(event)">
-            <div id="banner-label">📢 Наші канали</div>
+            <div id="banner-label">📢 Корисна інформація</div>
             <div id="menu-content">
-                <div id="step-1" class="btn-row">
-                    <button class="btn-choice tg-bg" onclick="selectSrv('tg', event)">Telegram</button>
-                    <button class="btn-choice vb-bg" onclick="selectSrv('vb', event)">Viber</button>
+                <div id="step-1">
+                    <div class="btn-row" style="margin-bottom: 8px;">
+                        <button class="btn-choice tg-bg" onclick="selectSrv('tg', event)">Telegram</button>
+                        <button class="btn-choice vb-bg" onclick="selectSrv('vb', event)">Viber</button>
+                    </div>
+                    <button class="q-link" style="justify-content: center; background: #3a3a3a; font-weight: bold; border-color: #555; width: 100%; cursor: pointer;" onclick="openChart(event)">
+                       📅 Графік планових відключень
+                    </button>
                 </div>
                 <div id="step-2" style="display: none;">
                     <div class="header-step">
@@ -93,19 +82,26 @@
         </div>
     </div>
 
-    <div class="queue-legend">
-    <div class="legend-item"><span class="dot" style="background: #ff0000;"></span> 1.1</div>
-    <div class="legend-item"><span class="dot" style="background: #0055ff;"></span> 2.1</div>
-    <div class="legend-item"><span class="dot" style="background: #aa00ff;"></span> 3.1</div>
-    <div class="legend-item"><span class="dot" style="background: #ffcc00;"></span> 3.2</div>
-    <div class="legend-item"><span class="dot" style="background: #ff8800;"></span> 4.1</div>
-    <div class="legend-item"><span class="dot" style="background: #00cc00;"></span> 6.1</div>
+    <div id="alertBanner" class="air-alert-banner">
+        <div id="alertStatusDot" class="alert-dot status-clear"></div>
+        <span id="alertText">Загрози відсутні</span>
+        <span id="alertTime" style="font-size: 11px; color: #aaa;"></span>
     </div>
-    <iframe src="https://umap.openstreetmap.fr/uk-ua/map/map_1365338?scaleControl=false&miniMap=false&scrollWheelZoom=true&zoomControl=true&editMode=disabled&moreControl=false&searchControl=false&tilelayersControl=false&embedControl=false&datalayersControl=true"></iframe>
-    
+
+    <div class="queue-legend">
+        <div class="legend-item"><span class="dot" style="background: #ff0000;"></span> 1.1</div>
+        <div class="legend-item"><span class="dot" style="background: #0055ff;"></span> 2.1</div>
+        <div class="legend-item"><span class="dot" style="background: #aa00ff;"></span> 3.1</div>
+        <div class="legend-item"><span class="dot" style="background: #ffcc00;"></span> 3.2</div>
+        <div class="legend-item"><span class="dot" style="background: #ff8800;"></span> 4.1</div>
+        <div class="legend-item"><span class="dot" style="background: #00cc00;"></span> 6.1</div>
+    </div>
+
+    <i<iframe src="https://umap.openstreetmap.fr/uk-ua/map/map_1365338?scaleControl=false&miniMap=false&scrollWheelZoom=true&zoomControl=true&editMode=disabled&moreControl=false&searchControl=false&tilelayersControl=false&embedControl=false&datalayersControl=true"></iframe>
+
     <script>
         const linksData = {
-            tg: { title: 'Обрано: Telegram', items: [
+            tg: { title: 'Telegram канали', items: [
                 {n: '1.1', c: 'red', l: 'https://t.me/svitlo_in_Slavutych_1_1'},
                 {n: '2.1', c: 'blue', l: 'https://t.me/svitlo_in_Slavutych_2_1'},
                 {n: '3.1', c: 'purple', l: 'https://t.me/svitlo_in_Slavutych_3_1'},
@@ -114,7 +110,7 @@
                 {n: '6.1', c: 'green', l: 'https://t.me/svitlo_in_Slavutych_6_1'},
                 {n: 'Новини', c: 'white', l: 'https://t.me/svitlo_in_Slavutych_News'}
             ]},
-            vb: { title: 'Обрано: Viber', items: [
+            vb: { title: 'Viber спільноти', items: [
                 {n: '1.1', c: 'red', l: 'https://invite.viber.com/?g2=AQAwYtpyJWoodlZaVSylf8qXJh%2BIkorI%2BUEIlSNEjLY97kwXcxRXWcee8Wt%2FJM%2FS'},
                 {n: '2.1', c: 'blue', l: 'https://invite.viber.com/?g2=AQBXEog0eJuMg1ZaVvzFZ14R%2Bq%2B3qDs5gmfU3pLXpwkPygNpg43EBTllJkScCQI6'},
                 {n: '3.1', c: 'purple', l: 'https://invite.viber.com/?g2=AQA8UIh2a1ur71ZaVlCe5j56cKWAwAem1kuhxYeCg9xsUb8AFCKgRE5duiSA3fvW'},
@@ -141,16 +137,31 @@
             const grid = document.getElementById('links-grid');
             grid.innerHTML = linksData[srv].items.map(i => `
                 <a href="${i.l}" target="_blank" class="q-link ${i.n === 'Новини' ? 'news-link' : ''}">
-                    ${i.n !== 'Новини' ? `<span class="dot" style="background:${i.c}"></span>` : '🔔 '}
-                    ${i.n}
+                    ${i.n !== 'Новини' ? `<span class="dot" style="background:${i.c}"></span>` : '🔔 '} ${i.n}
                 </a>
             `).join('');
         }
 
         function goBack(e) {
             if(e) e.stopPropagation();
-            document.getElementById('step-1').style.display = 'flex';
+            document.getElementById('step-1').style.display = 'block';
             document.getElementById('step-2').style.display = 'none';
+        }
+
+        function openChart(e) {
+            e.stopPropagation();
+            const img = document.getElementById('modalImg');
+            img.src = "https://raw.githubusercontent.com/amvasylets/Svitlo_in_Slavutych/refs/heads/main/charts/summary_today.png?t=" + new Date().getTime();
+            document.getElementById('imageModal').style.display = 'flex';
+        }
+
+        function closeChart() {
+            document.getElementById('imageModal').style.display = 'none';
+        }
+
+        // Логіка тривоги (заглушка, вставте свій токен пізніше)
+        async function updateAlertStatus() {
+            // Тут буде ваш запит до API alerts.in.ua
         }
 
         window.onclick = function(event) {

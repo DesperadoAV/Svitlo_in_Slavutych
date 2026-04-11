@@ -42,6 +42,34 @@
 
         /* Опускаємо кнопки мапи під банер */
         .leaflet-top.leaflet-left { margin-top: 65px !important; }
+        /* Банер черг*/
+        .queue-legend {
+    position: absolute;
+    bottom: 20px;
+    right: 10px;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 8px 12px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    z-index: 1000;
+    font-family: Arial, sans-serif;
+    font-size: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: bold;
+}
+.dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    display: inline-block;
+}
     </style>
 </head>
 <body>
@@ -65,6 +93,14 @@
         </div>
     </div>
 
+    <div class="queue-legend">
+    <div class="legend-item"><span class="dot" style="background: #ff0000;"></span> 1.1</div>
+    <div class="legend-item"><span class="dot" style="background: #0055ff;"></span> 2.1</div>
+    <div class="legend-item"><span class="dot" style="background: #aa00ff;"></span> 3.1</div>
+    <div class="legend-item"><span class="dot" style="background: #ffcc00;"></span> 3.2</div>
+    <div class="legend-item"><span class="dot" style="background: #ff8800;"></span> 4.1</div>
+    <div class="legend-item"><span class="dot" style="background: #00cc00;"></span> 6.1</div>
+    </div>
     <iframe src="https://umap.openstreetmap.fr/uk-ua/map/map_1365338?scaleControl=true&miniMap=false&scrollWheelZoom=true&zoomControl=true&editMode=disabled&moreControl=false&searchControl=false&tilelayersControl=false&embedControl=false&datalayersControl=true"></iframe>
     
     <script>

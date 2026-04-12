@@ -114,7 +114,7 @@
                 {n: 'Новини', c: 'white', l: 'https://invite.viber.com/?g2=AQBWONG%2BDtc6YVZaVt3j7%2BE73z2aD5aruhm7JFLEDXOExJuSOJZd6Ca2OsxdFHLo'}
             ]}
         };
-
+             
         function toggleMenu(e) {
             const content = document.getElementById('menu-content');
             if (e.target.id === 'banner-label' || e.target.id === 'main-banner') {
@@ -164,6 +164,11 @@
                 goBack();
             }
         }
+
+        // РЕБУТЕР: Перезавантаження сторінки кожні 3 хвилини
+        setTimeout(function() {
+            location.reload();
+            }, 180000);
     </script>
 </body>
 </html>

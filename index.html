@@ -8,29 +8,63 @@
     <style>
         body, html { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden; background: #1a1a1a; font-family: sans-serif; }
         iframe { width: 100%; height: 100%; border: none; display: block; }
-        .banner-container { position: absolute; top: 15px; left: 50%; transform: translateX(-50%); z-index: 10000; width: 90%; max-width: 400px; }
-        .main-btn { background: rgba(30, 30, 30, 0.95); color: white; padding: 12px; border-radius: 15px; text-align: center; font-weight: bold; cursor: pointer; border: 1px solid #444; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
-        .dropdown-menu { display: none; background: rgba(30, 30, 30, 0.98); margin-top: 10px; border-radius: 15px; padding: 15px; border: 1px solid #444; box-shadow: 0 10px 25px rgba(0,0,0,0.7); }
-        .btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
-        .srv-btn { padding: 12px; border-radius: 10px; border: none; color: white; font-weight: bold; cursor: pointer; text-align: center; font-size: 14px; text-decoration: none; }
+
+        /* СПІЛЬНИЙ СТИЛЬ ДЛЯ ПАНЕЛЕЙ */
+        .panel-base {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 220px; /* Однакова фіксована ширина */
+            background: rgba(30, 30, 30, 0.95);
+            color: white;
+            border: 1px solid #444;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.6);
+            z-index: 10000;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+
+        /* ВЕРХНЯ ПАНЕЛЬ */
+        .banner-container { top: 15px; }
+        .main-btn { text-align: center; font-weight: bold; cursor: pointer; font-size: 13px; }
+        
+        .dropdown-menu { 
+            display: none; 
+            margin-top: 10px; 
+            border-top: 1px solid #444; 
+            padding-top: 10px;
+            max-height: 50vh; 
+            overflow-y: auto; 
+        }
+
+        /* КНОПКИ ТА СІТКИ В МЕНЮ */
+        .btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 8px; }
+        .srv-btn { padding: 8px; border-radius: 8px; border: none; color: white; font-weight: bold; cursor: pointer; text-align: center; font-size: 12px; text-decoration: none; }
         .tg { background: #0088cc; }
         .vb { background: #7360f2; }
-        .chart-btn { width: 100%; background: #444; padding: 12px; border-radius: 10px; border: none; color: white; font-weight: bold; cursor: pointer; margin-top: 5px; }
-        .queues-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
-        .q-item { display: flex; align-items: center; background: #252525; padding: 10px; border-radius: 8px; color: white; text-decoration: none; font-size: 13px; border: 1px solid #333; }
-        .q-dot { width: 10px; height: 10px; border-radius: 50%; margin-right: 8px; }
-        .back-btn { background: none; border: none; color: #0088cc; cursor: pointer; padding: 5px 0; font-size: 12px; margin-bottom: 10px; }
-        .map-legend { position: absolute; bottom: 25px; right: 15px; background: rgba(25, 25, 25, 0.9); padding: 12px; border-radius: 12px; color: white; font-size: 12px; border: 1px solid #333; min-width: 200px; z-index: 1000; }
+        .chart-btn { width: 100%; background: #444; padding: 10px; border-radius: 8px; border: none; color: white; font-weight: bold; cursor: pointer; font-size: 11px; }
+        
+        .queues-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 5px; }
+        .q-item { display: flex; align-items: center; background: #252525; padding: 8px; border-radius: 6px; color: white; text-decoration: none; font-size: 11px; border: 1px solid #333; }
+        .q-dot { width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; flex-shrink: 0; }
+        .back-btn { background: none; border: none; color: #0088cc; cursor: pointer; padding: 0 0 8px 0; font-size: 11px; }
+
+        /* НИЖНЯ ПАНЕЛЬ (ЛЕГЕНДА) */
+        .map-legend { bottom: 25px; font-size: 12px; }
         .leg-item { display: flex; align-items: center; margin-bottom: 6px; }
-        .dot { height: 12px; width: 12px; border-radius: 50%; margin-right: 10px; flex-shrink: 0; }
+        .dot { height: 12px; width: 12px; border-radius: 50%; margin-right: 10px; flex-shrink: 0; border: 1px solid rgba(255,255,255,0.1); }
         .q-name { font-weight: bold; width: 30px; }
         .q-time { margin-left: auto; color: #ffd54f; font-weight: bold; }
+
+        /* МОДАЛЬНЕ ВІКНО ГРАФІКА */
         .modal { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:20000; justify-content:center; align-items:center; }
-        .modal img { max-width: 95%; max-height: 90%; border-radius: 10px; }
+        .modal img { max-width: 95%; max-height: 90%; border-radius: 10px; border: 1px solid #555; }
     </style>
 </head>
 <body>
-    <div class="banner-container">
+
+    <div class="banner-container panel-base">
         <div class="main-btn" onclick="toggleMenu()">📢 Корисна інформація</div>
         <div class="dropdown-menu" id="myMenu">
             <div id="step1">
@@ -43,16 +77,23 @@
             <div id="step2" style="display: none;">
                 <button class="back-btn" onclick="goBack()">← Назад</button>
                 <div class="queues-grid" id="queuesList"></div>
-                <a id="newsLink" href="#" target="_blank" class="q-item" style="grid-column: span 2; justify-content: center; margin-top: 5px; background: #333;">🔔 Канал новин</a>
+                <a id="newsLink" href="#" target="_blank" class="q-item" style="grid-column: span 2; justify-content: center; margin-top: 8px; background: #333; font-weight: bold;">🔔 Канал новин</a>
             </div>
         </div>
     </div>
-    <div class="map-legend" id="sheet-data">Оновлення статусів...</div>
-    <div id="chartModal" class="modal" onclick="this.style.display='none'"><img id="chartImg" src=""></div>
+
+    <div class="map-legend panel-base" id="sheet-data">Оновлення статусів...</div>
+
+    <div id="chartModal" class="modal" onclick="this.style.display='none'">
+        <img id="chartImg" src="">
+    </div>
+
     <iframe src="https://umap.openstreetmap.fr/uk-ua/map/map_1365338?scaleControl=false&miniMap=false&scrollWheelZoom=true&zoomControl=true&editMode=disabled&moreControl=false&searchControl=false&tilelayersControl=false&embedControl=false&datalayersControl=true"></iframe>
+
     <script>
         const SHEET_ID = "1QsynzpjvrRbZIagIdEd2TdjY228suZhXz8PxDJN8H68";
         const DATA_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=MapData`;
+
         const links = {
             tg: { news: "https://t.me/svitlo_in_Slavutych_News", items: [
                 {n: "1.1", c: "#EF4444", url: "https://t.me/svitlo_in_Slavutych_1_1"},
@@ -71,13 +112,69 @@
                 {n: "6.1", c: "#10B981", url: "https://invite.viber.com/?g2=AQBP%2BePVKBjDBFZaVeCnWMT9gn%2Fl2vl2636E%2B9vRvecZjNegiPbNxN93KG90spyY"}
             ]}
         };
-        function toggleMenu() { const m = document.getElementById('myMenu'); m.style.display = (m.style.display === 'block') ? 'none' : 'block'; if (m.style.display === 'none') goBack(); }
-        function showQueues(srv) { document.getElementById('step1').style.display = 'none'; document.getElementById('step2').style.display = 'block'; document.getElementById('newsLink').href = links[srv].news; const list = document.getElementById('queuesList'); list.innerHTML = links[srv].items.map(i => `<a href="${i.url}" target="_blank" class="q-item"><div class="q-dot" style="background:${i.c}"></div>${i.n}</a>`).join(''); }
-        function goBack() { document.getElementById('step1').style.display = 'block'; document.getElementById('step2').style.display = 'none'; }
-        function openChart() { document.getElementById('chartImg').src = "https://raw.githubusercontent.com/amvasylets/Svitlo_in_Slavutych/refs/heads/main/charts/summary_today.png?t=" + Date.now(); document.getElementById('chartModal').style.display = 'flex'; }
-        async function loadData() { try { const res = await fetch(DATA_URL + "&t=" + Date.now()); const csv = await res.text(); const rows = csv.split('\n').slice(1); let html = ''; rows.forEach(row => { const cols = row.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c => c.replace(/"/g, '').trim()); if (cols.length >= 3) { html += `<div class="leg-item"><div class="dot" style="background:${cols[1]}"></div><div class="q-name">${cols[0]}</div><div style="color:#aaa">${cols[2]}</div><div class="q-time">${cols[3] || ''}</div></div>`; } }); document.getElementById('sheet-data').innerHTML = html; } catch (e) { console.error(e); } }
-        loadData(); setInterval(loadData, 30000);
-        window.onclick = function(e) { if (!document.querySelector('.banner-container').contains(e.target)) { document.getElementById('myMenu').style.display = 'none'; goBack(); } };
+
+        function toggleMenu() {
+            const m = document.getElementById('myMenu');
+            m.style.display = (m.style.display === 'block') ? 'none' : 'block';
+            if (m.style.display === 'none') goBack();
+        }
+
+        function showQueues(srv) {
+            document.getElementById('step1').style.display = 'none';
+            document.getElementById('step2').style.display = 'block';
+            document.getElementById('newsLink').href = links[srv].news;
+            const list = document.getElementById('queuesList');
+            list.innerHTML = links[srv].items.map(i => `
+                <a href="${i.url}" target="_blank" class="q-item">
+                    <div class="q-dot" style="background:${i.c}"></div>
+                    ${i.n}
+                </a>
+            `).join('');
+        }
+
+        function goBack() {
+            document.getElementById('step1').style.display = 'block';
+            document.getElementById('step2').style.display = 'none';
+        }
+
+        function openChart() {
+            document.getElementById('chartImg').src = "https://raw.githubusercontent.com/amvasylets/Svitlo_in_Slavutych/refs/heads/main/charts/summary_today.png?t=" + Date.now();
+            document.getElementById('chartModal').style.display = 'flex';
+        }
+
+        async function loadData() {
+            try {
+                const res = await fetch(DATA_URL + "&t=" + Date.now());
+                const csv = await res.text();
+                const rows = csv.split('\n').slice(1);
+                let html = '';
+                rows.forEach(row => {
+                    const cols = row.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c => c.replace(/"/g, '').trim());
+                    if (cols.length >= 3) {
+                        html += `
+                            <div class="leg-item">
+                                <div class="dot" style="background:${cols[1]}"></div>
+                                <div class="q-name">${cols[0]}</div>
+                                <div style="color:#aaa">${cols[2]}</div>
+                                <div class="q-time">${cols[3] || ''}</div>
+                            </div>`;
+                    }
+                });
+                document.getElementById('sheet-data').innerHTML = html || "Немає даних";
+            } catch (e) { console.error("Помилка завантаження даних:", e); }
+        }
+
+        loadData();
+        setInterval(loadData, 30000);
+
+        // Закриття меню при кліку в будь-якому місці карти
+        window.addEventListener('click', function(e) {
+            const banner = document.querySelector('.banner-container');
+            if (!banner.contains(e.target)) {
+                document.getElementById('myMenu').style.display = 'none';
+                goBack();
+            }
+        });
     </script>
 </body>
 </html>

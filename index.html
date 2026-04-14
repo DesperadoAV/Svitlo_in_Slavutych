@@ -9,12 +9,12 @@
         body, html { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden; background: #1a1a1a; font-family: sans-serif; }
         iframe { width: 100%; height: 100%; border: none; display: block; }
 
-        /* СПІЛЬНИЙ СТИЛЬ ДЛЯ ПАНЕЛЕЙ */
+        /* СПІЛЬНИЙ СТИЛЬ ДЛЯ ОБОХ ПАНЕЛЕЙ */
         .panel-base {
             position: absolute;
             left: 50%;
             transform: translateX(-50%);
-            width: 220px; /* Однакова фіксована ширина */
+            width: 220px; 
             background: rgba(30, 30, 30, 0.95);
             color: white;
             border: 1px solid #444;
@@ -23,13 +23,12 @@
             z-index: 10000;
             padding: 10px;
             box-sizing: border-box;
+            transition: all 0.3s ease;
         }
 
-        /* ВЕРХНЯ ПАНЕЛЬ */
-        .banner-container { top: 15px; }
-        .main-btn { text-align: center; font-weight: bold; cursor: pointer; font-size: 13px; }
+        .panel-title { text-align: center; font-weight: bold; cursor: pointer; font-size: 13px; }
         
-        .dropdown-menu { 
+        .panel-content { 
             display: none; 
             margin-top: 10px; 
             border-top: 1px solid #444; 
@@ -37,6 +36,12 @@
             max-height: 50vh; 
             overflow-y: auto; 
         }
+
+        /* ВЕРХНЯ ПАНЕЛЬ (КОРИСНА ІНФО) */
+        .top-panel { top: 15px; }
+
+        /* НИЖНЯ ПАНЕЛЬ (СТАТУС ЧЕРГ) */
+        .bottom-panel { bottom: 25px; }
 
         /* КНОПКИ ТА СІТКИ В МЕНЮ */
         .btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 8px; }
@@ -50,23 +55,22 @@
         .q-dot { width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; flex-shrink: 0; }
         .back-btn { background: none; border: none; color: #0088cc; cursor: pointer; padding: 0 0 8px 0; font-size: 11px; }
 
-        /* НИЖНЯ ПАНЕЛЬ (ЛЕГЕНДА) */
-        .map-legend { bottom: 25px; font-size: 12px; }
-        .leg-item { display: flex; align-items: center; margin-bottom: 6px; }
+        /* ЕЛЕМЕНТИ ЛЕГЕНДИ */
+        .leg-item { display: flex; align-items: center; margin-bottom: 6px; font-size: 12px; }
         .dot { height: 12px; width: 12px; border-radius: 50%; margin-right: 10px; flex-shrink: 0; border: 1px solid rgba(255,255,255,0.1); }
         .q-name { font-weight: bold; width: 30px; }
         .q-time { margin-left: auto; color: #ffd54f; font-weight: bold; }
 
-        /* МОДАЛЬНЕ ВІКНО ГРАФІКА */
+        /* МОДАЛЬНЕ ВІКНО */
         .modal { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:20000; justify-content:center; align-items:center; }
         .modal img { max-width: 95%; max-height: 90%; border-radius: 10px; border: 1px solid #555; }
     </style>
 </head>
 <body>
 
-    <div class="banner-container panel-base">
-        <div class="main-btn" onclick="toggleMenu()">📢 Корисна інформація</div>
-        <div class="dropdown-menu" id="myMenu">
+    <div class="top-panel panel-base" id="topPanel">
+        <div class="panel-title" onclick="togglePanel('topContent')">📢 Корисна інформація</div>
+        <div class="panel-content" id="topContent">
             <div id="step1">
                 <div class="btn-grid">
                     <div class="srv-btn tg" onclick="showQueues('tg')">Telegram</div>
@@ -82,11 +86,14 @@
         </div>
     </div>
 
-    <div class="map-legend panel-base" id="sheet-data">Оновлення статусів...</div>
-
-    <div id="chartModal" class="modal" onclick="this.style.display='none'">
-        <img id="chartImg" src="">
+    <div class="bottom-panel panel-base" id="bottomPanel">
+        <div class="panel-title" onclick="togglePanel('bottomContent')">📊 Статус черг</div>
+        <div class="panel-content" id="bottomContent">
+            <div id="sheet-data">Завантаження...</div>
+        </div>
     </div>
+
+    <div id="chartModal" class="modal" onclick="this.style.display='none'"><img id="chartImg" src=""></div>
 
     <iframe src="https://umap.openstreetmap.fr/uk-ua/map/map_1365338?scaleControl=false&miniMap=false&scrollWheelZoom=true&zoomControl=true&editMode=disabled&moreControl=false&searchControl=false&tilelayersControl=false&embedControl=false&datalayersControl=true"></iframe>
 
@@ -113,10 +120,11 @@
             ]}
         };
 
-        function toggleMenu() {
-            const m = document.getElementById('myMenu');
-            m.style.display = (m.style.display === 'block') ? 'none' : 'block';
-            if (m.style.display === 'none') goBack();
+        function togglePanel(id) {
+            const content = document.getElementById(id);
+            const isVisible = content.style.display === 'block';
+            content.style.display = isVisible ? 'none' : 'block';
+            if (id === 'topContent' && isVisible) goBack();
         }
 
         function showQueues(srv) {
@@ -124,12 +132,7 @@
             document.getElementById('step2').style.display = 'block';
             document.getElementById('newsLink').href = links[srv].news;
             const list = document.getElementById('queuesList');
-            list.innerHTML = links[srv].items.map(i => `
-                <a href="${i.url}" target="_blank" class="q-item">
-                    <div class="q-dot" style="background:${i.c}"></div>
-                    ${i.n}
-                </a>
-            `).join('');
+            list.innerHTML = links[srv].items.map(i => `<a href="${i.url}" target="_blank" class="q-item"><div class="q-dot" style="background:${i.c}"></div>${i.n}</a>`).join('');
         }
 
         function goBack() {
@@ -151,30 +154,24 @@
                 rows.forEach(row => {
                     const cols = row.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c => c.replace(/"/g, '').trim());
                     if (cols.length >= 3) {
-                        html += `
-                            <div class="leg-item">
-                                <div class="dot" style="background:${cols[1]}"></div>
-                                <div class="q-name">${cols[0]}</div>
-                                <div style="color:#aaa">${cols[2]}</div>
-                                <div class="q-time">${cols[3] || ''}</div>
-                            </div>`;
+                        html += `<div class="leg-item"><div class="dot" style="background:${cols[1]}"></div><div class="q-name">${cols[0]}</div><div style="color:#aaa">${cols[2]}</div><div class="q-time">${cols[3] || ''}</div></div>`;
                     }
                 });
-                document.getElementById('sheet-data').innerHTML = html || "Немає даних";
-            } catch (e) { console.error("Помилка завантаження даних:", e); }
+                document.getElementById('sheet-data').innerHTML = html || "Дані відсутні";
+            } catch (e) { console.error(e); }
         }
 
         loadData();
         setInterval(loadData, 30000);
 
-        // Закриття меню при кліку в будь-якому місці карти
-        window.addEventListener('click', function(e) {
-            const banner = document.querySelector('.banner-container');
-            if (!banner.contains(e.target)) {
-                document.getElementById('myMenu').style.display = 'none';
+        // Закриття панелей при кліку поза ними
+        window.onclick = function(e) {
+            if (!document.getElementById('topPanel').contains(e.target) && !document.getElementById('bottomPanel').contains(e.target)) {
+                document.getElementById('topContent').style.display = 'none';
+                document.getElementById('bottomContent').style.display = 'none';
                 goBack();
             }
-        });
+        };
     </script>
 </body>
 </html>

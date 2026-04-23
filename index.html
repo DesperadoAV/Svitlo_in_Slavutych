@@ -4,145 +4,106 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <link rel="icon" type="image/png" href="https://i.postimg.cc/6qXnY1GR/1770893073813.png">
-    <title>Світло Славутич</title>
+    <title>Світло Славутич - LIVE</title>
     <style>
         body, html { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden; background: #1a1a1a; font-family: sans-serif; }
-        iframe { width: 100%; height: 100%; border: none; display: block; }
+        #bg-map { width: 100%; height: 100%; border: none; position: absolute; top: 0; left: 0; z-index: 1; }
 
-        /* СПІЛЬНИЙ СТИЛЬ ДЛЯ ОБОХ ПАНЕЛЕЙ */
-        .panel-base {
-            position: absolute;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 220px; 
-            background: rgba(30, 30, 30, 0.95);
-            color: white;
-            border: 1px solid #444;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.6);
-            z-index: 10000;
-            padding: 10px;
-            box-sizing: border-box;
-            transition: all 0.3s ease;
-        }
+        /* Власні кнопки керування (зліва) */
+        .map-controls { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 12px; z-index: 1000; }
+        .m-btn { width: 45px; height: 45px; background: rgba(35,35,35,0.95); border: 1px solid #444; color: white; border-radius: 12px; cursor: pointer; font-size: 20px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 15px rgba(0,0,0,0.6); transition: 0.2s; }
+        .m-btn:active { transform: scale(0.9); }
 
-        .panel-title { text-align: center; font-weight: bold; cursor: pointer; font-size: 13px; }
+        /* Екстрене повідомлення */
+        #emergency-banner { position: absolute; top: 0; width: 100%; background: #ff3b30; color: white; padding: 10px 0; font-weight: bold; z-index: 5000; display: none; overflow: hidden; }
+        .marquee { display: inline-block; padding-left: 100%; animation: marquee 20s linear infinite; white-space: nowrap; }
+        @keyframes marquee { 0% { transform: translate(0, 0); } 100% { transform: translate(-100%, 0); } }
+
+        /* Панелі (Банери) */
+        .panel { position: absolute; left: 50%; transform: translateX(-50%); background: rgba(25,25,25,0.98); border: 1px solid #333; border-radius: 16px; z-index: 2000; color: white; width: 280px; box-shadow: 0 10px 40px rgba(0,0,0,0.8); display: none; overflow: hidden; }
+        .p-info { top: 20px; }
+        .p-status { bottom: 30px; display: block; } /* Статус завжди видно як заголовок */
         
-        .panel-content { 
-            display: none; 
-            margin-top: 10px; 
-            border-top: 1px solid #444; 
-            padding-top: 10px;
-            max-height: 50vh; 
-            overflow-y: auto; 
-        }
+        .p-head { padding: 15px; text-align: center; font-weight: bold; cursor: pointer; background: rgba(40,40,40,0.5); font-size: 14px; }
+        .p-body { padding: 15px; border-top: 1px solid #333; max-height: 60vh; overflow-y: auto; }
 
-        /* ВЕРХНЯ ПАНЕЛЬ (КОРИСНА ІНФО) */
-        .top-panel { top: 15px; }
+        /* Стилі черг */
+        .q-item { display: flex; align-items: center; margin-bottom: 10px; font-size: 13px; padding: 4px 0; }
+        .q-dot { width: 12px; height: 12px; border-radius: 50%; margin-right: 10px; }
+        .q-name { flex: 1; font-weight: bold; }
+        .q-time { color: #ffd54f; font-weight: bold; margin-right: 10px; }
+        .eye-btn { cursor: pointer; font-size: 16px; opacity: 0.4; }
+        .eye-btn.active { opacity: 1; }
 
-        /* НИЖНЯ ПАНЕЛЬ (СТАТУС ЧЕРГ) */
-        .bottom-panel { bottom: 25px; }
-
-        /* КНОПКИ ТА СІТКИ В МЕНЮ */
-        .btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 8px; }
-        .srv-btn { padding: 8px; border-radius: 8px; border: none; color: white; font-weight: bold; cursor: pointer; text-align: center; font-size: 12px; text-decoration: none; }
-        .tg { background: #0088cc; }
-        .vb { background: #7360f2; }
-        .chart-btn { width: 100%; background: #444; padding: 10px; border-radius: 8px; border: none; color: white; font-weight: bold; cursor: pointer; font-size: 11px; }
-        
-        .queues-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 5px; }
-        .q-item { display: flex; align-items: center; background: #252525; padding: 8px; border-radius: 6px; color: white; text-decoration: none; font-size: 11px; border: 1px solid #333; }
-        .q-dot { width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; flex-shrink: 0; }
-        .back-btn { background: none; border: none; color: #0088cc; cursor: pointer; padding: 0 0 8px 0; font-size: 11px; }
-
-        /* ЕЛЕМЕНТИ ЛЕГЕНДИ */
-        .leg-item { display: flex; align-items: center; margin-bottom: 6px; font-size: 12px; }
-        .dot { height: 12px; width: 12px; border-radius: 50%; margin-right: 10px; flex-shrink: 0; border: 1px solid rgba(255,255,255,0.1); }
-        .q-name { font-weight: bold; width: 30px; }
-        .q-time { margin-left: auto; color: #ffd54f; font-weight: bold; }
-
-        /* МОДАЛЬНЕ ВІКНО */
-        .modal { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:20000; justify-content:center; align-items:center; }
-        .modal img { max-width: 95%; max-height: 90%; border-radius: 10px; border: 1px solid #555; }
+        /* Кнопки месенджерів (всередині Інфо) */
+        .srv-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+        .srv-btn { padding: 10px; border-radius: 8px; text-align: center; text-decoration: none; color: white; font-weight: bold; font-size: 12px; }
+        .btn-tg { background: #0088cc; }
+        .btn-vb { background: #7360f2; }
     </style>
 </head>
 <body>
 
-    <div class="top-panel panel-base" id="topPanel">
-        <div class="panel-title" onclick="togglePanel('topContent')">📢 Корисна інформація</div>
-        <div class="panel-content" id="topContent">
-            <div id="step1">
-                <div class="btn-grid">
-                    <div class="srv-btn tg" onclick="showQueues('tg')">Telegram</div>
-                    <div class="srv-btn vb" onclick="showQueues('vb')">Viber</div>
-                </div>
-                <button class="chart-btn" onclick="openChart()">📅 Графік відключень</button>
+    <div id="emergency-banner"><div class="marquee" id="emergency-text"></div></div>
+
+    <div class="map-controls">
+        <button class="m-btn" onclick="zoomIn()">+</button>
+        <button class="m-btn" onclick="zoomOut()">-</button>
+        <button class="m-btn" onclick="togglePanel('info-panel')">ℹ️</button>
+    </div>
+
+    <div class="panel p-info" id="info-panel">
+        <div class="p-head" onclick="togglePanel('info-panel')">📢 Корисна інформація</div>
+        <div class="p-body">
+            <button onclick="openChart()" style="width:100%; padding:12px; background:#444; border:none; color:white; border-radius:10px; cursor:pointer; font-weight:bold; margin-bottom:15px;">📅 Графік на сьогодні</button>
+            <div style="font-size: 12px; color: #aaa; margin-bottom: 5px;">Наші канали та чати:</div>
+            <div class="srv-grid">
+                <a href="https://t.me/svitlo_in_Slavutych_News" target="_blank" class="srv-btn btn-tg">Telegram</a>
+                <a href="https://invite.viber.com/?g2=AQBWONG%2BDtc6YVZaVt3j7%2BE73z2aD5aruhm7JFLEDXOExJuSOJZd6Ca2OsxdFHLo" target="_blank" class="srv-btn btn-vb">Viber</a>
             </div>
-            <div id="step2" style="display: none;">
-                <button class="back-btn" onclick="goBack()">← Назад</button>
-                <div class="queues-grid" id="queuesList"></div>
-                <a id="newsLink" href="#" target="_blank" class="q-item" style="grid-column: span 2; justify-content: center; margin-top: 8px; background: #333; font-weight: bold;">🔔 Канал новин</a>
-            </div>
+            <div id="visitor-stats" style="margin-top:15px; font-size:10px; color:#555; text-align:center;"></div>
         </div>
     </div>
 
-    <div class="bottom-panel panel-base" id="bottomPanel">
-        <div class="panel-title" onclick="togglePanel('bottomContent')">📊 Статус черг</div>
-        <div class="panel-content" id="bottomContent">
-            <div id="sheet-data">Завантаження...</div>
+    <div class="panel p-status" style="display:block;">
+        <div class="p-head" id="status-toggle" onclick="toggleStatusBody()">📊 Статус черг</div>
+        <div class="p-body" id="status-body" style="display:none;">
+            <div id="queues-container">Завантаження даних...</div>
         </div>
     </div>
 
-    <div id="chartModal" class="modal" onclick="this.style.display='none'"><img id="chartImg" src=""></div>
-
-    <iframe src="https://umap.openstreetmap.fr/uk-ua/map/map_1365338?scaleControl=false&miniMap=false&scrollWheelZoom=true&zoomControl=true&editMode=disabled&moreControl=false&searchControl=false&tilelayersControl=false&embedControl=false&datalayersControl=true"></iframe>
+    <iframe id="bg-map" src="https://umap.openstreetmap.fr/uk-ua/map/map_1371725?scaleControl=false&miniMap=false&scrollWheelZoom=true&zoomControl=false&editMode=disabled&moreControl=false&searchControl=false&tilelayersControl=false&embedControl=false&datalayersControl=false"></iframe>
 
     <script>
         const SHEET_ID = "1QsynzpjvrRbZIagIdEd2TdjY228suZhXz8PxDJN8H68";
         const DATA_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=MapData`;
-
-        const links = {
-            tg: { news: "https://t.me/svitlo_in_Slavutych_News", items: [
-                {n: "1.1", c: "#EF4444", url: "https://t.me/svitlo_in_Slavutych_1_1"},
-                {n: "2.1", c: "#3B82F6", url: "https://t.me/svitlo_in_Slavutych_2_1"},
-                {n: "3.1", c: "#A855F7", url: "https://t.me/svitlo_in_Slavutych_3_1"},
-                {n: "3.2", c: "#F59E0B", url: "https://t.me/svitlo_in_Slavutych_3_2"},
-                {n: "4.1", c: "#F97316", url: "https://t.me/svitlo_in_Slavutych_4_1"},
-                {n: "6.1", c: "#10B981", url: "https://t.me/svitlo_in_Slavutych_6_1"}
-            ]},
-            vb: { news: "https://invite.viber.com/?g2=AQBWONG%2BDtc6YVZaVt3j7%2BE73z2aD5aruhm7JFLEDXOExJuSOJZd6Ca2OsxdFHLo", items: [
-                {n: "1.1", c: "#EF4444", url: "https://invite.viber.com/?g2=AQAwYtpyJWoodlZaVSylf8qXJh%2BIkorI%2BUEIlSNEjLY97kwXcxRXWcee8Wt%2FJM%2FS"},
-                {n: "2.1", c: "#3B82F6", url: "https://invite.viber.com/?g2=AQBXEog0eJuMg1ZaVvzFZ14R%2Bq%2B3qDs5gmfU3pLXpwkPygNpg43EBTllJkScCQI6"},
-                {n: "3.1", c: "#A855F7", url: "https://invite.viber.com/?g2=AQA8UIh2a1ur71ZaVlCe5j56cKWAwAem1kuhxYeCg9xsUb8AFCKgRE5duiSA3fvW"},
-                {n: "3.2", c: "#F59E0B", url: "https://invite.viber.com/?g2=AQA9Od9EXDrYslZaNY2rHJ1v1t8S5lA9RGxcLlvDP4ujK3n%2BHMvVHzeWmldseJdN"},
-                {n: "4.1", c: "#F97316", url: "https://invite.viber.com/?g2=AQAr4i0FDuS0TlZaWDF6W2Hk%2BTDJrVrCLKTBQSvAwDb7JPuDYn0HE0WtouQyqIm7"},
-                {n: "6.1", c: "#10B981", url: "https://invite.viber.com/?g2=AQBP%2BePVKBjDBFZaVeCnWMT9gn%2Fl2vl2636E%2B9vRvecZjNegiPbNxN93KG90spyY"}
-            ]}
-        };
+        
+        // Стан черг (6 штук)
+        let activeQueues = ["1.1", "2.1", "3.1", "3.2", "4.1", "6.1"];
+        const layerIds = {"1.1": "3707578", "2.1": "3707579", "3.1": "3707580", "3.2": "3707581", "4.1": "3707582", "6.1": "3707584"};
 
         function togglePanel(id) {
-            const content = document.getElementById(id);
-            const isVisible = content.style.display === 'block';
-            content.style.display = isVisible ? 'none' : 'block';
-            if (id === 'topContent' && isVisible) goBack();
+            const p = document.getElementById(id);
+            p.style.display = (p.style.display === 'block') ? 'none' : 'block';
         }
 
-        function showQueues(srv) {
-            document.getElementById('step1').style.display = 'none';
-            document.getElementById('step2').style.display = 'block';
-            document.getElementById('newsLink').href = links[srv].news;
-            const list = document.getElementById('queuesList');
-            list.innerHTML = links[srv].items.map(i => `<a href="${i.url}" target="_blank" class="q-item"><div class="q-dot" style="background:${i.c}"></div>${i.n}</a>`).join('');
+        function toggleStatusBody() {
+            const b = document.getElementById('status-body');
+            b.style.display = (b.style.display === 'block') ? 'none' : 'block';
         }
 
-        function goBack() {
-            document.getElementById('step1').style.display = 'block';
-            document.getElementById('step2').style.display = 'none';
+        function toggleLayer(q, event) {
+            event.stopPropagation();
+            const idx = activeQueues.indexOf(q);
+            if (idx > -1) activeQueues.splice(idx, 1);
+            else activeQueues.push(q);
+            updateMap();
+            loadData();
         }
 
-        function openChart() {
-            document.getElementById('chartImg').src = "https://raw.githubusercontent.com/amvasylets/Svitlo_in_Slavutych/refs/heads/main/charts/summary_today.png?t=" + Date.now();
-            document.getElementById('chartModal').style.display = 'flex';
+        function updateMap() {
+            const ids = activeQueues.map(q => layerIds[q]).join(',');
+            document.getElementById('bg-map').src = `https://umap.openstreetmap.fr/uk-ua/map/map_1371725?datalayers=${ids}#15/51.5229/30.7598`;
         }
 
         async function loadData() {
@@ -150,28 +111,52 @@
                 const res = await fetch(DATA_URL + "&t=" + Date.now());
                 const csv = await res.text();
                 const rows = csv.split('\n').slice(1);
+                
                 let html = '';
+                // Беремо перші 6 унікальних черг для списку
+                const processed = new Set();
+                
                 rows.forEach(row => {
                     const cols = row.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c => c.replace(/"/g, '').trim());
-                    if (cols.length >= 3) {
-                        html += `<div class="leg-item"><div class="dot" style="background:${cols[1]}"></div><div class="q-name">${cols[0]}</div><div style="color:#aaa">${cols[2]}</div><div class="q-time">${cols[3] || ''}</div></div>`;
+                    const qName = cols[0].replace('Черга ', '');
+                    
+                    if (!processed.has(qName) && layerIds[qName]) {
+                        const isActive = activeQueues.includes(qName);
+                        html += `
+                            <div class="q-item">
+                                <div class="q-dot" style="background:${cols[1]}"></div>
+                                <div class="q-name">Черга ${qName}</div>
+                                <div class="q-time">${cols[9]}</div>
+                                <div class="eye-btn ${isActive?'active':''}" onclick="toggleLayer('${qName}', event)">${isActive?'👁️':'🙈'}</div>
+                            </div>`;
+                        processed.add(qName);
+                    }
+                    
+                    // Перевірка на екстрене повідомлення (якщо в стовпці I є спец. мітка)
+                    if (cols[8] && cols[8].includes("!!!")) {
+                        const banner = document.getElementById('emergency-banner');
+                        banner.style.display = 'block';
+                        document.getElementById('emergency-text').innerText = cols[8].replace("!!!", "");
                     }
                 });
-                document.getElementById('sheet-data').innerHTML = html || "Дані відсутні";
+                document.getElementById('queues-container').innerHTML = html;
             } catch (e) { console.error(e); }
         }
 
+        // Функції зуму
+        function zoomIn() { alert("Використовуйте подвійний клік на мапі"); }
+        function zoomOut() { alert("Використовуйте коліщатко миші"); }
+
+        function openChart() {
+            window.open("https://raw.githubusercontent.com/amvasylets/Svitlo_in_Slavutych/refs/heads/main/charts/summary_today.png", "_blank");
+        }
+
+        // Невидимий лічильник
+        const img = new Image();
+        img.src = "https://script.google.com/macros/s/AKfycbyjYyCqG6M_W4B2S-7mO3W5J6y7C8V9B0/exec?t=" + Date.now();
+
         loadData();
         setInterval(loadData, 30000);
-
-        // Закриття панелей при кліку поза ними
-        window.onclick = function(e) {
-            if (!document.getElementById('topPanel').contains(e.target) && !document.getElementById('bottomPanel').contains(e.target)) {
-                document.getElementById('topContent').style.display = 'none';
-                document.getElementById('bottomContent').style.display = 'none';
-                goBack();
-            }
-        };
     </script>
 </body>
 </html>

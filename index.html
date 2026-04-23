@@ -9,152 +9,102 @@
         body, html { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden; background: #1a1a1a; font-family: sans-serif; }
         #bg-map { width: 100%; height: 100%; border: none; position: absolute; top: 0; left: 0; z-index: 1; }
 
-        /* Власні кнопки керування */
-        .map-controls { position: absolute; left: 15px; top: 20px; display: flex; flex-direction: column; gap: 12px; z-index: 1000; }
-        .m-btn { width: 45px; height: 45px; background: rgba(35,35,35,0.95); border: 1px solid #444; color: white; border-radius: 12px; cursor: pointer; font-size: 20px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 15px rgba(0,0,0,0.6); pointer-events: auto; }
-
-        /* Панелі */
-        .panel { position: absolute; left: 50%; transform: translateX(-50%); background: rgba(25,25,25,0.98); border: 1px solid #333; border-radius: 16px; z-index: 2000; color: white; width: 290px; box-shadow: 0 10px 40px rgba(0,0,0,0.8); }
-        .p-info { top: 20px; display: none; }
+        .panel { position: absolute; left: 50%; transform: translateX(-50%); background: rgba(25,25,25,0.98); border: 1px solid #444; border-radius: 16px; z-index: 2000; color: white; width: 290px; box-shadow: 0 10px 40px rgba(0,0,0,0.8); }
         .p-status { bottom: 30px; display: block; }
-        
-        .p-head { padding: 15px; text-align: center; font-weight: bold; cursor: pointer; background: rgba(40,40,40,0.5); font-size: 14px; border-radius: 16px; }
-        .p-body { padding: 15px; border-top: 1px solid #333; max-height: 50vh; overflow-y: auto; display: none; }
+        .p-head { padding: 15px; text-align: center; font-weight: bold; cursor: pointer; background: #333; font-size: 14px; border-radius: 16px; }
+        .p-body { padding: 15px; border-top: 1px solid #444; max-height: 50vh; overflow-y: auto; display: block; }
 
-        .q-item { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; background: rgba(255,255,255,0.05); padding: 8px 12px; border-radius: 10px; }
-        .q-info { display: flex; align-items: center; gap: 10px; }
-        .q-dot { width: 12px; height: 12px; border-radius: 50%; }
+        .q-item { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 12px; }
+        .q-dot { width: 12px; height: 12px; border-radius: 50%; margin-right: 10px; }
         .q-time { color: #ffd54f; font-weight: bold; font-size: 13px; }
-        
-        .eye-btn { cursor: pointer; font-size: 18px; filter: grayscale(1); transition: 0.2s; opacity: 0.5; }
-        .eye-btn.active { filter: grayscale(0); opacity: 1; }
-
-        .srv-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
-        .srv-btn { padding: 10px; border-radius: 8px; text-align: center; text-decoration: none; color: white; font-weight: bold; font-size: 12px; }
-        .btn-tg { background: #0088cc; }
-        .btn-vb { background: #7360f2; }
+        .eye-btn { cursor: pointer; font-size: 20px; text-shadow: 0 0 5px black; }
     </style>
 </head>
 <body>
 
-    <div class="map-controls">
-        <button class="m-btn" onclick="togglePanel('info-panel')">ℹ️</button>
-    </div>
-
-    <div class="panel p-info" id="info-panel">
-        <div class="p-head" onclick="togglePanel('info-panel')">📢 Корисна інформація</div>
-        <div class="p-body" id="info-body" style="display:block;">
-            <button onclick="window.open('https://raw.githubusercontent.com/amvasylets/Svitlo_in_Slavutych/refs/heads/main/charts/summary_today.png', '_blank')" style="width:100%; padding:12px; background:#444; border:none; color:white; border-radius:10px; cursor:pointer; font-weight:bold; margin-bottom:15px;">📅 Графік на сьогодні</button>
-            <div class="srv-grid">
-                <a href="https://t.me/svitlo_in_Slavutych_News" target="_blank" class="srv-btn btn-tg">Telegram</a>
-                <a href="https://invite.viber.com/?g2=AQBWONG%2BDtc6YVZaVt3j7%2BE73z2aD5aruhm7JFLEDXOExJuSOJZd6Ca2OsxdFHLo" target="_blank" class="srv-btn btn-vb">Viber</a>
-            </div>
-        </div>
-    </div>
-
-    <div class="panel p-status" id="status-panel">
-        <div class="p-head" onclick="toggleStatusBody()">📊 Статус черг (натисніть)</div>
-        <div class="p-body" id="status-body">
-            <div id="queues-container">Завантаження...</div>
+    <div class="panel p-status">
+        <div class="p-head">📊 Статус черг</div>
+        <div class="p-body" id="queues-container">
+            <div style="text-align:center; padding:20px;">Завантаження...</div>
         </div>
     </div>
 
     <iframe id="bg-map" src="about:blank"></iframe>
 
     <script>
+        // Ваші налаштування
         const SHEET_ID = "1QsynzpjvrRbZIagIdEd2TdjY228suZhXz8PxDJN8H68";
         const DATA_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=MapData`;
         
         const layerIds = {
-            "1.1": "3707578", 
-            "2.1": "3707579", 
-            "3.1": "3707580", 
-            "3.2": "3707581", 
-            "4.1": "3707582", 
-            "6.1": "3707584"
+            "1.1": "3707578", "2.1": "3707579", "3.1": "3707580", 
+            "3.2": "3707581", "4.1": "3707582", "6.1": "3707584"
         };
         
         let activeQueues = Object.keys(layerIds);
-        let lastCsvData = [];
 
-        function togglePanel(id) {
-            const p = document.getElementById(id);
-            p.style.display = (p.style.display === 'block') ? 'none' : 'block';
+        function updateMap() {
+            const ids = activeQueues.map(q => layerIds[q]).filter(id => id).join(',');
+            const url = `https://umap.openstreetmap.fr/uk-ua/map/map_1371725?datalayers=${ids}#15/51.5229/30.7598`;
+            document.getElementById('bg-map').src = url;
         }
 
-        function toggleStatusBody() {
-            const b = document.getElementById('status-body');
-            b.style.display = (b.style.display === 'block') ? 'none' : 'block';
+        async function loadData() {
+            console.log("Запит до таблиці...");
+            try {
+                const response = await fetch(DATA_URL + "&t=" + Date.now());
+                const text = await response.text();
+                const lines = text.split('\n');
+                
+                let html = '';
+                const seen = new Set();
+
+                // Пропускаємо заголовок (i=1)
+                for (let i = 1; i < lines.length; i++) {
+                    // Простий розбір CSV рядка
+                    const cols = lines[i].split(',').map(c => c.replace(/"/g, '').trim());
+                    if (cols.length < 2) continue;
+
+                    const rawName = cols[0]; // Напр. "Черга 1.1"
+                    const qKey = rawName.replace('Черга ', ''); // "1.1"
+
+                    if (layerIds[qKey] && !seen.has(qKey)) {
+                        const isActive = activeQueues.includes(qKey);
+                        html += `
+                            <div class="q-item">
+                                <div style="display:flex; align-items:center;">
+                                    <div class="q-dot" style="background:${cols[1] || '#888'}"></div>
+                                    <div>
+                                        <div style="font-weight:bold; font-size:14px;">${rawName}</div>
+                                        <div class="q-time">${cols[9] || '--:--'}</div>
+                                    </div>
+                                </div>
+                                <div class="eye-btn" onclick="toggleLayer('${qKey}')">${isActive ? '👁️' : '🙈'}</div>
+                            </div>`;
+                        seen.add(qKey);
+                    }
+                }
+                
+                document.getElementById('queues-container').innerHTML = html || "Дані не знайдено в таблиці";
+            } catch (err) {
+                console.error("Помилка:", err);
+                document.getElementById('queues-container').innerHTML = "Помилка зв'язку з Google";
+            }
         }
 
-        function toggleLayer(q, event) {
-            if(event) event.stopPropagation();
+        function toggleLayer(q) {
             const idx = activeQueues.indexOf(q);
             if (idx > -1) activeQueues.splice(idx, 1);
             else activeQueues.push(q);
             
             updateMap();
-            renderQueueList();
+            loadData(); // Перемалювати список з новими очима
         }
 
-        function updateMap() {
-            const ids = activeQueues.map(q => layerIds[q]).join(',');
-            const mapUrl = `https://umap.openstreetmap.fr/uk-ua/map/map_1371725?datalayers=${ids}#15/51.5229/30.7598`;
-            document.getElementById('bg-map').src = mapUrl;
-        }
-
-        async function loadData() {
-            try {
-                const res = await fetch(DATA_URL + "&t=" + Date.now());
-                const csv = await res.text();
-                lastCsvData = csv.split('\n').slice(1);
-                renderQueueList();
-            } catch (e) { 
-                console.error("Помилка завантаження CSV:", e);
-                document.getElementById('queues-container').innerHTML = "Помилка оновлення";
-            }
-        }
-
-        function renderQueueList() {
-            let html = '';
-            const processed = new Set();
-
-            if (lastCsvData.length === 0) {
-                document.getElementById('queues-container').innerHTML = "Дані завантажуються...";
-                return;
-            }
-
-            lastCsvData.forEach(row => {
-                const cols = row.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c => c.replace(/"/g, '').trim());
-                if(cols.length < 2) return;
-                
-                const qName = cols[0].replace('Черга ', '');
-                
-                if (!processed.has(qName) && layerIds[qName]) {
-                    const isActive = activeQueues.includes(qName);
-                    html += `
-                        <div class="q-item">
-                            <div class="q-info">
-                                <div class="q-dot" style="background:${cols[1] || '#555'}"></div>
-                                <div>
-                                    <div style="font-weight:bold">Черга ${qName}</div>
-                                    <div class="q-time">${cols[9] || '--:--'}</div>
-                                </div>
-                            </div>
-                            <div class="eye-btn ${isActive?'active':''}" onclick="toggleLayer('${qName}', event)">${isActive?'👁️':'🙈'}</div>
-                        </div>`;
-                    processed.add(qName);
-                }
-            });
-            document.getElementById('queues-container').innerHTML = html || "Немає даних";
-        }
-
-        // Прямий виклик при завантаженні
-        window.onload = () => {
-            updateMap();
-            loadData();
-            setInterval(loadData, 30000);
-        };
+        // Старт
+        updateMap();
+        loadData();
+        setInterval(loadData, 40000);
     </script>
 </body>
 </html>

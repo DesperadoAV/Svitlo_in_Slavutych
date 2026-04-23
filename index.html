@@ -10,22 +10,21 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
     <style>
-        body, html { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden; background: #1a1a1a; font-family: sans-serif; }
+        body, html { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden; background: #f0f0f0; font-family: sans-serif; }
         #map { position: absolute; top: 0; bottom: 0; width: 100%; z-index: 1; }
         
-        /* Панелі керування */
-        .panel { position: absolute; left: 50%; transform: translateX(-50%); background: rgba(25,25,25,0.95); border: 1px solid #444; border-radius: 16px; z-index: 1000; color: white; width: 280px; }
+        /* Панелі */
+        .panel { position: absolute; left: 50%; transform: translateX(-50%); background: rgba(30, 30, 30, 0.95); border: 1px solid #444; border-radius: 16px; z-index: 1000; color: white; width: 280px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
         .p-status { bottom: 20px; }
         .p-head { padding: 12px; text-align: center; font-weight: bold; cursor: pointer; font-size: 14px; }
-        .p-body { padding: 10px; border-top: 1px solid #444; max-height: 40vh; overflow-y: auto; }
+        .p-body { padding: 10px; border-top: 1px solid #444; max-height: 45vh; overflow-y: auto; }
 
         .q-item { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; background: rgba(255,255,255,0.05); padding: 8px; border-radius: 10px; }
         .eye-btn { cursor: pointer; font-size: 18px; }
 
-        /* Стиль вікна при кліку на будинок */
-        .leaflet-popup-content-wrapper { background: #222; color: white; border-radius: 12px; }
-        .leaflet-popup-tip { background: #222; }
-        .status-tag { display: inline-block; padding: 2px 6px; border-radius: 4px; font-weight: bold; margin-top: 5px; }
+        /* Стиль балуна */
+        .leaflet-popup-content-wrapper { background: #fff; color: #333; border-radius: 8px; padding: 5px; }
+        .status-tag { display: inline-block; padding: 3px 8px; border-radius: 4px; color: white; font-weight: bold; margin-top: 5px; font-size: 12px; }
     </style>
 </head>
 <body>
@@ -33,9 +32,9 @@
     <div id="map"></div>
 
     <div class="panel p-status">
-        <div class="p-head" onclick="document.getElementById('s-body').style.display = (document.getElementById('s-body').style.display=='none'?'block':'none')">📊 Керування чергами</div>
+        <div class="p-head" onclick="toggleBody()">📊 Статус черг (Керування)</div>
         <div class="p-body" id="s-body">
-            <div id="queues-list">Завантаження...</div>
+            <div id="queues-list">Оновлення даних...</div>
         </div>
     </div>
 
@@ -43,12 +42,19 @@
         const SHEET_ID = "1QsynzpjvrRbZIagIdEd2TdjY228suZhXz8PxDJN8H68";
         const DATA_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=MapData`;
 
-        // Створюємо мапу (uMap використовуємо тільки як картинку-підкладку)
+        // Ініціалізація мапи (стиль OpenStreetMap)
         const map = L.map('map', { zoomControl: false }).setView([51.5229, 30.7598], 15);
-        L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png').addTo(map);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap'
+        }).addTo(map);
 
-        let layers = {}; // Об'єкт для зберігання груп точок по чергах
+        let layers = {}; 
         let activeQueues = new Set(["1.1", "2.1", "3.1", "3.2", "4.1", "6.1"]);
+
+        function toggleBody() {
+            const b = document.getElementById('s-body');
+            b.style.display = (b.style.display === 'none') ? 'block' : 'none';
+        }
 
         async function loadPoints() {
             try {
@@ -56,81 +62,83 @@
                 const csv = await res.text();
                 const rows = csv.split('\n').slice(1);
 
-                // Очищаємо старі шари
-                Object.values(layers).forEach(layer => map.removeLayer(layer));
+                // Очищення старих точок
+                Object.values(layers).forEach(l => map.removeLayer(l));
                 layers = {};
 
-                const queueInfo = {}; // Для списку черг
+                const queueInfo = {}; 
 
                 rows.forEach(row => {
+                    // Парсимо CSV
                     const cols = row.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c => c.replace(/"/g, '').trim());
-                    if (cols.length < 10) return;
+                    if (cols.length < 11) return;
 
-                    const addr = cols[0]; // Напр. "Черга 1.1: вул. Миру 5"
-                    const qKey = addr.split(':')[0].replace('Черга ', '').trim();
-                    const lat = parseFloat(cols[4]); // Стовпець E
-                    const lng = parseFloat(cols[5]); // Стовпець F
-                    const color = cols[1]; // Стовпець B
-                    const statusText = cols[7]; // Стовпець H (Світло є/немає)
-                    const userMsg = cols[8]; // Стовпець I (Повідомлення)
-                    const timeInfo = `${cols[9]} | ${cols[10]}`; // J та K
+                    const fullAddr = cols[0]; // "Черга 1.1: вул..."
+                    const qKey = fullAddr.includes("Черга") ? fullAddr.split(':')[0].replace('Черга ', '').trim() : "Інше";
+                    const lat = parseFloat(cols[4]);
+                    const lng = parseFloat(cols[5]);
+                    const color = cols[1] || "#888";
+                    const status = cols[7]; // Світло є/немає
+                    const msg = cols[8]; // Повідомлення
+                    const timeJ = cols[9]; 
+                    const timeK = cols[10];
 
                     if (!layers[qKey]) layers[qKey] = L.layerGroup();
                     
-                    // Створюємо крапку
                     const marker = L.circleMarker([lat, lng], {
-                        radius: 7,
+                        radius: 8,
                         fillColor: color,
                         color: "#fff",
-                        weight: 1,
+                        weight: 2,
                         fillOpacity: 0.9
                     });
 
-                    // Вікно при кліку (Балун)
                     marker.bindPopup(`
-                        <div style="text-align:center">
-                            <b>${addr}</b><br>
-                            <span class="status-tag" style="background:${color}">${statusText}</span><br>
-                            <p style="font-size:12px; margin:10px 0;">${userMsg}</p>
-                            <small style="color:#aaa">${timeInfo}</small>
+                        <div style="font-family: sans-serif; line-height: 1.4;">
+                            <b style="font-size:14px;">${fullAddr}</b><br>
+                            <span class="status-tag" style="background:${color}">${status}</span><br>
+                            <div style="margin: 8px 0; font-size:13px; color:#444;">${msg}</div>
+                            <hr style="border:0; border-top:1px solid #eee;">
+                            <div style="font-size:11px; color:#888;">Оновлено: ${timeJ}<br>Прогноз: ${timeK}</div>
                         </div>
                     `);
 
                     marker.addTo(layers[qKey]);
-                    
-                    // Зберігаємо інфо для списку
-                    if (!queueInfo[qKey]) queueInfo[qKey] = { color: color, time: cols[9] };
+                    if (!queueInfo[qKey]) queueInfo[qKey] = { color: color, time: timeJ };
                 });
 
                 renderList(queueInfo);
                 refreshMap();
-            } catch (e) { console.error(e); }
+            } catch (e) { console.error("CSV Load Error:", e); }
         }
 
         function renderList(info) {
             let html = '';
             Object.keys(info).sort().forEach(q => {
+                if (q === "Інше") return;
                 const active = activeQueues.has(q);
                 html += `
                     <div class="q-item">
                         <div style="display:flex; align-items:center; gap:8px">
-                            <div style="width:10px; height:10px; border-radius:50%; background:${info[q].color}"></div>
-                            <span>Черга ${q}</span>
+                            <div style="width:12px; height:12px; border-radius:50%; background:${info[q].color}"></div>
+                            <span style="font-size:13px; font-weight:bold;">Черга ${q}</span>
                         </div>
-                        <div style="display:flex; align-items:center; gap:10px">
+                        <div style="display:flex; align-items:center; gap:12px">
                             <span style="font-size:11px; color:#ffd54f">${info[q].time}</span>
                             <span class="eye-btn" onclick="toggleQ('${q}')">${active?'👁️':'🙈'}</span>
                         </div>
                     </div>`;
             });
-            document.getElementById('queues-list').innerHTML = html;
+            document.getElementById('queues-list').innerHTML = html || "Дані не знайдені";
         }
 
         function toggleQ(q) {
             if (activeQueues.has(q)) activeQueues.delete(q);
             else activeQueues.add(q);
             refreshMap();
-            loadPoints(); // Перемальовуємо список
+            // Список не перевантажуємо повністю, а просто міняємо очі (швидкість)
+            const icons = document.querySelectorAll('.eye-btn');
+            loadPoints(); 
         }
 
         function refreshMap() {
@@ -140,8 +148,9 @@
             });
         }
 
+        // Запуск
         loadPoints();
-        setInterval(loadPoints, 30000);
+        setInterval(loadPoints, 35000);
     </script>
 </body>
 </html>

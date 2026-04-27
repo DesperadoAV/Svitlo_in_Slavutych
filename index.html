@@ -86,6 +86,7 @@
             <button class="close-x" onclick="toggleModal('infoModal')">×</button>
             <div id="page-main" class="info-page active">
                 <span class="modal-title">Світло Славутич</span>
+                <p class="modal-text"><b>Як користуватися мапою:</b></p>
                 <p class="modal-text">📍 <span style="color:#228BE6; font-weight:bold;">Кольоровий маркер</span> — світло зараз Є.</p>
                 <p class="modal-text">📍 <span style="color:#888; font-weight:bold;">Сірий маркер</span> — світло ВІДСУТНЄ.</p>
                 <div class="status-legend">
@@ -128,7 +129,7 @@
     <div class="modal" id="forecastModal" onclick="toggleModal('forecastModal')">
         <div class="modal-content" onclick="event.stopPropagation()">
             <button class="close-x" onclick="toggleModal('forecastModal')">×</button>
-            <h3>Поточний статус черг</h3>
+            <h3>Графік черг</h3>
             <div id="forecast-list"></div>
         </div>
     </div>
@@ -176,44 +177,10 @@
         }).setView([51.5229, 30.7598], 15);
 
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+        map.on('click', () => document.getElementById('qMenu').style.display = 'none');
         
         let layers = {}, markersStore = {};
         let nezlamnistLayer = L.layerGroup().addTo(map);
-
-        // --- ПАРСЕР CSV (найважливіша частина) ---
-        function parseCSV(text) {
-            const result = [];
-            let row = [];
-            let cell = '';
-            let inQuotes = false;
-
-            for (let i = 0; i < text.length; i++) {
-                let char = text[i];
-                let nextChar = text[i + 1];
-
-                if (inQuotes && char === '"' && nextChar === '"') {
-                    cell += '"'; i++;
-                } else if (char === '"') {
-                    inQuotes = !inQuotes;
-                } else if (char === ',' && !inQuotes) {
-                    row.push(cell); cell = '';
-                } else if ((char === '\r' || char === '\n') && !inQuotes) {
-                    if (char === '\r' && nextChar === '\n') i++;
-                    row.push(cell);
-                    result.push(row);
-                    row = []; cell = '';
-                } else {
-                    cell += char;
-                }
-            }
-            if (cell || row.length > 0) { row.push(cell); result.push(row); }
-            return result;
-        }
-
-        const clean = (t) => {
-            if (!t) return "";
-            return t.trim().replace(/^"|"$/g, '').replace(/""/g, '"');
-        };
 
         function getNezIcon(zoom) {
             let s = zoom <= 14 ? 18 : (zoom === 15 ? 28 : 36);
@@ -239,56 +206,114 @@
             for(let q in layers) layers[q].eachLayer(m => m.setIcon(getQIcon(m._isLight ? QUEUE_CONFIG[q].icon : "grey", z)));
         });
 
-        async function updateData() {
-            try {
-                const res = await fetch(`https://docs.google.com/spreadsheets/d/e/${DOC_ID}/pub?output=csv&gid=${MAP_DATA_GID}&t=${Date.now()}`);
-                const rows = parseCSV(await res.text());
-
-                // ПАРСИНГ СПОВІЩЕННЯ (C10 та D10)
-                const autoText = clean(rows[9]?.[2]);
-                const manualText = clean(rows[9]?.[3]);
-                const finalAlertText = manualText !== "" ? manualText : autoText;
-
-                const alertEl = document.getElementById('top-alert');
-                if (finalAlertText && finalAlertText !== "") {
-                    alertEl.innerText = finalAlertText;
-                    alertEl.style.display = 'block';
-                } else {
-                    alertEl.style.display = 'none';
-                }
-
-                // Оновлення Пунктів Незламності
-                nezlamnistLayer.clearLayers();
-                PUNKT_NEZLAMNOSTI.forEach((p, i) => {
-                    const r = rows[13 + i];
-                    const info = clean(r?.[2]) || 'Інформація уточнюється';
-                    const workTime = clean(r?.[3]) || '';
-                    const popup = `<b>🏠 ${p.name}</b><br><div style="background:#eef2f7; padding:8px; border-radius:8px; margin-top:5px; font-size:12px; white-space: pre-wrap;">${info}<br><b>${workTime}</b></div>`;
-                    L.marker([p.lat, p.lng], { icon: getNezIcon(map.getZoom()) }).bindPopup(popup).addTo(nezlamnistLayer);
-                });
-
-                // Оновлення списку в модалці прогнозу
-                let fHtml = "";
-                for (let i = 1; i <= 6; i++) {
-                    const r = rows[i];
-                    if (r) {
-                        const qNum = clean(r[0]);
-                        const statusInfo = clean(r[2]);
-                        const manualInfo = clean(r[3]);
-                        const color = QUEUE_CONFIG[qNum]?.color || "#333";
-                        fHtml += `<div style="background:${color}; color:white; margin-bottom:8px; padding:12px; border-radius:12px; display:flex; justify-content:space-between; font-size:14px;">
-                                    <b>Черга ${qNum}</b> 
-                                    <span>${statusInfo} ${manualInfo}</span>
-                                  </div>`;
-                    }
-                }
-                document.getElementById('forecast-list').innerHTML = fHtml;
-
-                for (let q in QUEUE_CONFIG) await fetchQueue(q);
-                renderMenu();
-
-            } catch (e) { console.error("Помилка:", e); }
+        // --- ЛОГІКА ОДНОРАЗОВОГО ЛІЧИЛЬНИКА ---
+        function triggerCounter() {
+            if (!sessionStorage.getItem('was_counted')) {
+                const img = new Image();
+                img.src = "https://script.google.com/macros/s/AKfycbyyaj7xfeUZXnWyLeUUrKBxgg8H-OXFdSFX010kYj3WAAVt3CXbsRpO21-GutSjOOuB/exec?t=" + Date.now();
+                img.onload = () => sessionStorage.setItem('was_counted', 'true');
+            }
         }
+        window.addEventListener('load', triggerCounter);
+        
+        // --- ФУНКЦІЯ ПАРСИНГУ CSV ---
+        // ЗАМІНИ ЦЮ ФУНКЦІЮ У СВОЄМУ КОДІ (або скопіюй весь блок нижче)
+function parseCSV(text) {
+    const result = [];
+    let row = [];
+    let cell = '';
+    let inQuotes = false;
+
+    for (let i = 0; i < text.length; i++) {
+        let char = text[i];
+        let nextChar = text[i + 1];
+
+        if (inQuotes && char === '"' && nextChar === '"') {
+            cell += '"';
+            i++;
+        } else if (char === '"') {
+            inQuotes = !inQuotes;
+        } else if (char === ',' && !inQuotes) {
+            row.push(cell);
+            cell = '';
+        } else if ((char === '\r' || char === '\n') && !inQuotes) {
+            if (char === '\r' && nextChar === '\n') i++;
+            row.push(cell);
+            result.push(row);
+            row = [];
+            cell = '';
+        } else {
+            cell += char;
+        }
+    }
+    if (cell || row.length > 0) {
+        row.push(cell);
+        result.push(row);
+    }
+    return result;
+}
+
+// ОНОВЛЕНА ФУНКЦІЯ updateData
+async function updateData() {
+    try {
+        const res = await fetch(`https://docs.google.com/spreadsheets/d/e/${DOC_ID}/pub?output=csv&gid=${MAP_DATA_GID}&t=${Date.now()}`);
+        const csvText = await res.text();
+        const rows = parseCSV(csvText);
+
+        const clean = (t) => {
+            if (!t) return "";
+            return t.trim().replace(/^"|"$/g, '').replace(/""/g, '"');
+        };
+
+        // Рядок 10 (індекс 9)
+        const autoText = clean(rows[9]?.[2]);   // C10
+        const manualText = clean(rows[9]?.[3]); // D10
+        
+        // Пріоритет ручному тексту з D10
+        const finalAlertText = manualText !== "" ? manualText : autoText;
+
+        const alertEl = document.getElementById('top-alert');
+        if (finalAlertText && finalAlertText !== "") {
+            alertEl.innerText = finalAlertText;
+            alertEl.style.display = 'block';
+        } else {
+            alertEl.style.display = 'none';
+        }
+
+        // Оновлення списку черг (рядки 1-6)
+        let fHtml = "";
+        for (let i = 1; i <= 6; i++) {
+            const r = rows[i];
+            if (r) {
+                const qNum = clean(r[0]);
+                const statusInfo = clean(r[2]);
+                const manualInfo = clean(r[3]);
+                const color = QUEUE_CONFIG[qNum]?.color || "#333";
+                fHtml += `<div style="background:${color}; color:white; margin-bottom:8px; padding:12px; border-radius:12px; display:flex; justify-content:space-between; font-size:14px;">
+                            <b>Черга ${qNum}</b> 
+                            <span>${statusInfo} ${manualInfo}</span>
+                          </div>`;
+            }
+        }
+        document.getElementById('forecast-list').innerHTML = fHtml;
+
+        // Оновлення Пунктів Незламності
+        nezlamnistLayer.clearLayers();
+        PUNKT_NEZLAMNOSTI.forEach((p, i) => {
+            const r = rows[13 + i];
+            const info = clean(r?.[2]) || 'Інформація уточнюється';
+            const workTime = clean(r?.[3]) || '';
+            const popup = `<b>🏠 ${p.name}</b><br><div style="background:#eef2f7; padding:8px; border-radius:8px; margin-top:5px; font-size:12px; white-space: pre-wrap;">${info}<br><b>${workTime}</b></div>`;
+            L.marker([p.lat, p.lng], { icon: getNezIcon(map.getZoom()) }).bindPopup(popup).addTo(nezlamnistLayer);
+        });
+
+        for (let q in QUEUE_CONFIG) await fetchQueue(q);
+        renderMenu();
+
+    } catch (e) { 
+        console.error("Помилка оновлення:", e); 
+    }
+}
 
         async function fetchQueue(q) {
             const conf = QUEUE_CONFIG[q];
@@ -302,12 +327,12 @@
 
                 for (let i = 2; i < rows.length; i++) {
                     const r = rows[i]; if(!r[3]) continue;
-                    const isLight = (clean(r[5]).toLowerCase() === 'y');
+                    const isLight = (r[5]?.toLowerCase() === 'y');
                     const m = L.marker([parseFloat(r[3].replace(',','.')), parseFloat(r[4].replace(',','.'))], { icon: getQIcon(isLight ? conf.icon : "grey", map.getZoom()) });
                     m._isLight = isLight;
-                    m.bindPopup(`<b>${clean(r[1])}</b>${r[2] ? `<br><i>${clean(r[2])}</i>` : ''}<br>${isLight?'💡 Світло є':'🕯️ Світла немає'}<br><small>Оновлено: ${clean(r[8])}</small>`);
+                    m.bindPopup(`<b>${r[1]}</b>${r[2] ? `<br><i>${r[2]}</i>` : ''}<br>${isLight?'💡 Світло є':'🕯️ Світла немає'}<br><small>Оновлено: ${r[8]||''}</small>`);
                     m.addTo(layers[q]);
-                    markersStore[q][clean(r[1])] = m;
+                    markersStore[q][r[1]] = m;
                 }
             } catch(e) {}
         }

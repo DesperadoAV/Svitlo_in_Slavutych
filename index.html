@@ -417,7 +417,28 @@ function applyChannelLinks(rows) {
     });
 }
 
-function applyQueue(q, rows) {
+// Дані сторонньої мапи (mediadim). Вмикаються кнопкою «Джерело даних» у боті мапи:
+// бот пише в MapData ключі source, ext_gid, ext_updated і заповнює аркуш «Зовнішні».
+// Якщо дані застаріли або не завантажились, мапа показує дані з таблиць, як і раніше.
+const EXT_MAX_AGE_MS = 15 * 60 * 1000;
+async function loadExternal(mainRows) {
+    const keys = {};
+    mainRows.forEach(r => {
+        const k = (r[0] || "").trim();
+        if (k === "source" || k === "ext_gid" || k === "ext_updated") keys[k] = (r[1] || "").trim();
+    });
+    if (keys.source !== "mediadim" || !/^\d+$/.test(keys.ext_gid || "")) return null;
+    if (!(Date.now() - Date.parse(keys.ext_updated || "") < EXT_MAX_AGE_MS)) return null;
+    const rows = await fetchCsv(keys.ext_gid);
+    const ext = {};
+    rows.slice(1).forEach(r => {
+        const st = (r[2] || "").trim().toLowerCase();
+        if (r[0] && r[1] && (st === "y" || st === "n")) ext[`${r[0].trim()}|${r[1].trim()}`] = { isLight: st === "y", updatedText: (r[3] || "").trim() };
+    });
+    return ext;
+}
+
+function applyQueue(q, rows, ext) {
     const conf = QUEUE_CONFIG[q];
     const parsed = [];
     for (let i = 2; i < rows.length; i++) {
@@ -437,7 +458,10 @@ function applyQueue(q, rows) {
 
     parsed.forEach(({ r, lat, lng }) => {
         const key = `${r[1]}|${lat}|${lng}`;
-        const row = resolveRow(`${q}|${key}`, r[5]?.trim().toLowerCase() === 'y', r[8] || '');
+        const own = ext && ext[`${q}|${String(r[1]).trim()}`];
+        const row = own
+            ? resolveRow(`ext|${q}|${key}`, own.isLight, own.updatedText)
+            : resolveRow(`${q}|${key}`, r[5]?.trim().toLowerCase() === 'y', r[8] || '');
         const html = `<b>${r[1]}</b>${r[2] ? `<br><i>${r[2]}</i>` : ''}<br>${row.isLight?'💡 Світло є':'🕯️ Світла немає'}<br><small>Оновлено: ${row.updatedText}</small>`;
 
         let m = current[key];
@@ -484,9 +508,11 @@ async function updateData() {
     isUpdating = true;
     clearTimeout(nextTimer);
 
-    const tasks = [fetchCsv(MAP_DATA_GID).then(applyMainSheet)];
+    const mainTask = fetchCsv(MAP_DATA_GID);
+    const extTask = mainTask.then(loadExternal).catch(e => { console.error("Дані mediadim:", e); return null; });
+    const tasks = [mainTask.then(applyMainSheet)];
     for (let q in QUEUE_CONFIG) {
-        tasks.push(fetchCsv(QUEUE_CONFIG[q].gid).then(rows => applyQueue(q, rows)));
+        tasks.push(Promise.all([fetchCsv(QUEUE_CONFIG[q].gid), extTask]).then(([rows, ext]) => applyQueue(q, rows, ext)));
     }
     const results = await Promise.allSettled(tasks);
     const failed = results.filter(r => r.status === 'rejected');

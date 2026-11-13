@@ -261,6 +261,7 @@ const RECHECK_MS = 20 * 1000;         // контрольна перевірка
 const RESUME_GAP_MS = 30 * 1000;      // при поверненні на вкладку: оновити, якщо минуло більше 30 секунд
 const FETCH_TIMEOUT_MS = 20 * 1000;   // скільки чекати відповідь Google
 const STALE_ACCEPT_MS = 60 * 60 * 1000; // якщо старіша дата тримається годину, значить її виправили вручну
+const EXT_STALE_ACCEPT_MS = 5 * 60 * 1000; // дані mediadim: старіша дата лише перечікує затримку Google, не довше
 const STATE_KEY = 'svitlo_map_state_v1';
 
 let isUpdating = false, lastUpdate = 0, nextTimer = null, needRecheck = true, lastMenuHtml = "";
@@ -314,14 +315,14 @@ function parseUpdated(text) {
 }
 
 // Не дає старій копії таблиці перезаписати вже побачені свіжіші дані
-function resolveRow(stateKey, isLight, updatedText) {
+function resolveRow(stateKey, isLight, updatedText, acceptMs = STALE_ACCEPT_MS) {
     const ts = parseUpdated(updatedText);
     const saved = rowState[stateKey];
     if (ts === null) return { isLight, updatedText };
 
     if (saved && ts < saved.ts) {
         if (!saved.rejectedAt) saved.rejectedAt = Date.now();
-        if (Date.now() - saved.rejectedAt < STALE_ACCEPT_MS) {
+        if (Date.now() - saved.rejectedAt < acceptMs) {
             return { isLight: saved.isLight, updatedText: saved.updatedText };
         }
     }
@@ -460,7 +461,7 @@ function applyQueue(q, rows, ext) {
         const key = `${r[1]}|${lat}|${lng}`;
         const own = ext && ext[`${q}|${String(r[1]).trim()}`];
         const row = own
-            ? resolveRow(`ext|${q}|${key}`, own.isLight, own.updatedText)
+            ? resolveRow(`ext|${q}|${key}`, own.isLight, own.updatedText, EXT_STALE_ACCEPT_MS)
             : resolveRow(`${q}|${key}`, r[5]?.trim().toLowerCase() === 'y', r[8] || '');
         const html = `<b>${r[1]}</b>${r[2] ? `<br><i>${r[2]}</i>` : ''}<br>${row.isLight?'💡 Світло є':'🕯️ Світла немає'}<br><small>Оновлено: ${row.updatedText}</small>`;
 
